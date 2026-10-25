@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import { Family, Citizen, MaritalStatus, GenderType, PeneranganType, MckType, BansosType } from './types';
 import { getCitizenMaritalStatus, getFamilyHouseNumber } from './mockData';
 
@@ -66,75 +67,122 @@ export function prepareSpreadsheetRows(
   });
 }
 
-// Generate CSV string with Excel compatibility (UTF-8 BOM and escaped fields)
-export function generateCsv(rows: ExportRow[]): string {
-  const headers: (keyof ExportRow)[] = [
-    'no_kk',
-    'kepala_keluarga',
-    'nik',
-    'nama_lengkap',
-    'hubungan_keluarga',
-    'jenis_kelamin',
-    'tempat_lahir',
-    'tanggal_lahir',
-    'status_perkawinan',
-    'agama',
-    'pendidikan_terakhir',
-    'pekerjaan',
-    'alamat',
-    'no_rumah',
-    'rt',
-    'rw',
-    'dusun',
-    'status_barcode',
-    'status_update',
-    'penerangan',
-    'fasilitas_mck',
-    'bantuan_sosial',
-  ];
+// Indonesian Header Labels for Excel Table
+export const SPREADSHEET_COLUMNS = [
+  { key: 'no_kk', label: 'Nomor Kartu Keluarga' },
+  { key: 'kepala_keluarga', label: 'Nama Kepala Keluarga' },
+  { key: 'nik', label: 'Nomor Induk Kependudukan (NIK)' },
+  { key: 'nama_lengkap', label: 'Nama Lengkap Warga' },
+  { key: 'hubungan_keluarga', label: 'Hubungan Keluarga' },
+  { key: 'jenis_kelamin', label: 'Jenis Kelamin (L/P)' },
+  { key: 'tempat_lahir', label: 'Tempat Lahir' },
+  { key: 'tanggal_lahir', label: 'Tanggal Lahir' },
+  { key: 'status_perkawinan', label: 'Status Perkawinan' },
+  { key: 'agama', label: 'Agama' },
+  { key: 'pendidikan_terakhir', label: 'Pendidikan Terakhir' },
+  { key: 'pekerjaan', label: 'Pekerjaan' },
+  { key: 'alamat', label: 'Alamat Lengkap' },
+  { key: 'no_rumah', label: 'Nomor Rumah' },
+  { key: 'rt', label: 'RT' },
+  { key: 'rw', label: 'RW' },
+  { key: 'dusun', label: 'Dusun' },
+  { key: 'status_barcode', label: 'Status Barcode' },
+  { key: 'status_update', label: 'Status Validasi' },
+  { key: 'penerangan', label: 'Penerangan Listrik' },
+  { key: 'fasilitas_mck', label: 'Fasilitas MCK' },
+  { key: 'bantuan_sosial', label: 'Bantuan Sosial' },
+] as const;
 
-  const headerLabels = [
-    'No KK',
-    'Kepala Keluarga',
-    'NIK',
-    'Nama Lengkap',
-    'Hubungan Keluarga',
-    'Jenis Kelamin (L/P)',
-    'Tempat Lahir',
-    'Tanggal Lahir (YYYY-MM-DD)',
-    'Status Perkawinan',
-    'Agama',
-    'Pendidikan Terakhir',
-    'Pekerjaan',
-    'Alamat Lengkap',
-    'Nomor Rumah',
-    'RT',
-    'RW',
-    'Dusun',
-    'Status Barcode (Ya/Tidak)',
-    'Status Validasi (Ya/Tidak)',
-    'Penerangan Listrik',
-    'Fasilitas MCK',
-    'Bantuan Sosial',
-  ];
+// Helper to format rows into ordered display dictionary
+function mapRowsToOrderedDict(rows: ExportRow[]) {
+  return rows.map((r) => {
+    const item: Record<string, string> = {};
+    SPREADSHEET_COLUMNS.forEach((col) => {
+      item[col.label] = (r as any)[col.key] || '';
+    });
+    return item;
+  });
+}
 
-  const csvRows: string[] = [];
-  csvRows.push(headerLabels.map((h) => `"${h}"`).join(','));
+/**
+ * 1. NATIVE EXCEL (.xlsx) EXPORTER
+ * Menghasilkan file Excel asli (.xlsx) dengan kolom rapi terpisah,
+ * NIK & KK bertipe teks (tidak terpotong jadi notasi ilmiah 3.21608E+15),
+ * dan lebar kolom otomatis disesuaikan.
+ */
+export function exportToExcel(rows: ExportRow[], fileName: string) {
+  const formattedData = mapRowsToOrderedDict(rows);
+  const worksheet = XLSX.utils.json_to_sheet(formattedData);
+
+  // Auto calculate column widths
+  const colWidths = SPREADSHEET_COLUMNS.map((col) => {
+    let maxLen = col.label.length;
+    rows.forEach((r) => {
+      const val = String((r as any)[col.key] || '');
+      if (val.length > maxLen) maxLen = val.length;
+    });
+    return { wch: Math.min(Math.max(maxLen + 3, 10), 45) };
+  });
+  worksheet['!cols'] = colWidths;
+
+  // Set explicit string type for NIK & KK cells so Excel doesn't parse them as numbers
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+  for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+    // Column 0: Nomor Kartu Keluarga, Column 2: NIK
+    const cellKk = worksheet[XLSX.utils.encode_cell({ r: R, c: 0 })];
+    if (cellKk) {
+      cellKk.t = 's';
+      cellKk.z = '@';
+    }
+    const cellNik = worksheet[XLSX.utils.encode_cell({ r: R, c: 2 })];
+    if (cellNik) {
+      cellNik.t = 's';
+      cellNik.z = '@';
+    }
+  }
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Kependudukan');
+
+  // Trigger download as .xlsx
+  XLSX.writeFile(workbook, fileName.endsWith('.xlsx') ? fileName : `${fileName}.xlsx`);
+}
+
+/**
+ * 2. INDONESIAN REGIONAL CSV EXPORTER
+ * Menggunakan separator titik-koma (;) dan instruksi `sep=;`
+ * agar saat dibuka di Microsoft Excel versi Indonesia langsung terbagi per kolom!
+ */
+export function generateCsvIndonesia(rows: ExportRow[]): string {
+  const delimiter = ';';
+  const headers = SPREADSHEET_COLUMNS.map((col) => col.label);
+
+  const lines: string[] = [];
+  // sep=; explicitly informs Excel to split columns using semicolon
+  lines.push(`sep=${delimiter}`);
+  lines.push(headers.map((h) => `"${h}"`).join(delimiter));
 
   rows.forEach((row) => {
-    const line = headers.map((key) => {
-      let val = row[key] || '';
-      // Format 16-digit numbers with prefix to avoid scientific notation in Excel
-      if (key === 'no_kk' || key === 'nik') {
+    const line = SPREADSHEET_COLUMNS.map((col) => {
+      const val = String((row as any)[col.key] || '');
+      // Format 16-digit numbers with ="..." so Excel preserves full text
+      if (col.key === 'no_kk' || col.key === 'nik') {
         return `="${val}"`;
       }
       return `"${val.replace(/"/g, '""')}"`;
     });
-    csvRows.push(line.join(','));
+    lines.push(line.join(delimiter));
   });
 
-  // \uFEFF is UTF-8 Byte Order Mark for Excel compatibility
-  return '\uFEFF' + csvRows.join('\r\n');
+  // UTF-8 BOM (\uFEFF)
+  return '\uFEFF' + lines.join('\r\n');
+}
+
+/**
+ * 3. STANDARD CSV EXPORTER (COMMA)
+ */
+export function generateCsv(rows: ExportRow[]): string {
+  return generateCsvIndonesia(rows);
 }
 
 // Download file trigger helper
@@ -150,74 +198,74 @@ export function downloadFile(content: string, fileName: string, contentType: str
   URL.revokeObjectURL(url);
 }
 
-// Parse uploaded CSV content into rows
-export function parseCsv(csvText: string): Record<string, string>[] {
-  // Remove BOM if present
-  let cleanText = csvText.replace(/^\uFEFF/, '').trim();
-  const lines = cleanText.split(/\r?\n/);
-  if (lines.length < 2) return [];
+/**
+ * 4. UNIVERSAL SPREADSHEET PARSER (.xlsx, .xls, .csv)
+ * Mampu membaca baik berkas Excel binary maupun file CSV dengan separator apapun.
+ */
+export async function parseSpreadsheetFile(file: File): Promise<Record<string, string>[]> {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) return [];
 
-  // Parse header line (support comma or semicolon)
-  const delimiter = lines[0].includes(';') ? ';' : ',';
+  const worksheet = workbook.Sheets[firstSheetName];
+  // Parse rows as raw objects with header
+  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, {
+    raw: false, // get formatted string values
+    defval: '',
+  });
 
-  const parseLine = (line: string): string[] => {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
+  // Normalize header keys into snake_case
+  return rawRows.map((raw) => {
+    const normalized: Record<string, string> = {};
+    Object.keys(raw).forEach((origKey) => {
+      // Map standard Indonesian labels to clean internal keys
+      const cleanKey = origKey
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/^_+|_+$/g, '');
 
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === delimiter && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    result.push(current.trim());
+      // Also provide standard aliases
+      let mappedKey = cleanKey;
+      if (cleanKey.includes('kartu_keluarga') || cleanKey === 'no_kk') mappedKey = 'no_kk';
+      else if (cleanKey.includes('kepala_keluarga')) mappedKey = 'kepala_keluarga';
+      else if (cleanKey.includes('nik') || cleanKey.includes('ktp')) mappedKey = 'nik';
+      else if (cleanKey.includes('nama_lengkap') || cleanKey === 'nama') mappedKey = 'nama_lengkap';
+      else if (cleanKey.includes('hubungan')) mappedKey = 'hubungan_keluarga';
+      else if (cleanKey.includes('jenis_kelamin')) mappedKey = 'jenis_kelamin';
+      else if (cleanKey.includes('perkawinan') || cleanKey.includes('nikah')) mappedKey = 'status_perkawinan';
+      else if (cleanKey.includes('rumah')) mappedKey = 'no_rumah';
+      else if (cleanKey.includes('alamat')) mappedKey = 'alamat';
 
-    // Clean up Excel `="123"` format
-    return result.map((item) => {
-      if (item.startsWith('="') && item.endsWith('"')) {
-        return item.slice(2, -1);
-      }
-      if (item.startsWith('"') && item.endsWith('"')) {
-        return item.slice(1, -1);
-      }
-      return item;
+      normalized[mappedKey] = String(raw[origKey] || '').trim();
+      normalized[cleanKey] = String(raw[origKey] || '').trim();
     });
-  };
-
-  const headers = parseLine(lines[0]).map((h) =>
-    h.toLowerCase().replace(/[^a-z0-9]/g, '_')
-  );
-
-  const results: Record<string, string>[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const values = parseLine(lines[i]);
-    const row: Record<string, string> = {};
-
-    headers.forEach((header, idx) => {
-      row[header] = values[idx] || '';
-    });
-
-    results.push(row);
-  }
-
-  return results;
+    return normalized;
+  });
 }
 
-// Generate template CSV for download
-export function generateSampleTemplate(): string {
+// Fallback CSV text parser
+export function parseCsv(csvText: string): Record<string, string>[] {
+  const workbook = XLSX.read(csvText, { type: 'string' });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+    raw: false,
+    defval: '',
+  });
+
+  return rawRows.map((raw) => {
+    const normalized: Record<string, string> = {};
+    Object.keys(raw).forEach((k) => {
+      const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, '');
+      normalized[cleanKey] = String(raw[k] || '').trim();
+    });
+    return normalized;
+  });
+}
+
+// Generate template Excel file for download
+export function generateSampleTemplateWorkbook(): void {
   const sampleRows: ExportRow[] = [
     {
       no_kk: '3216081203000001',
@@ -293,5 +341,34 @@ export function generateSampleTemplate(): string {
     },
   ];
 
-  return generateCsv(sampleRows);
+  exportToExcel(sampleRows, 'Template_Format_Data_Kependudukan_Karanghaur.xlsx');
+}
+
+export function generateSampleTemplate(): string {
+  return generateCsvIndonesia([
+    {
+      no_kk: '3216081203000001',
+      kepala_keluarga: 'SAMSUDIN',
+      nik: '3216081205780001',
+      nama_lengkap: 'SAMSUDIN',
+      hubungan_keluarga: 'Kepala Keluarga',
+      jenis_kelamin: 'L',
+      tempat_lahir: 'Bekasi',
+      tanggal_lahir: '1978-05-12',
+      status_perkawinan: 'Kawin',
+      agama: 'Islam',
+      pendidikan_terakhir: 'SMA / Sederajat',
+      pekerjaan: 'Buruh Harian Lepas',
+      alamat: 'Jl. Balai Desa RT 001 / RW 001',
+      no_rumah: '01',
+      rt: '001',
+      rw: '001',
+      dusun: 'Dusun I',
+      status_barcode: 'Ya',
+      status_update: 'Ya',
+      penerangan: 'meteran',
+      fasilitas_mck: 'sendiri',
+      bantuan_sosial: 'pkh',
+    },
+  ]);
 }

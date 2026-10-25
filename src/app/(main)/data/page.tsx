@@ -5,9 +5,12 @@ import Link from 'next/link';
 import { useApp } from '@/lib/context';
 import {
   prepareSpreadsheetRows,
+  exportToExcel,
+  generateCsvIndonesia,
   generateCsv,
   downloadFile,
-  parseCsv,
+  parseSpreadsheetFile,
+  generateSampleTemplateWorkbook,
   generateSampleTemplate,
   ExportRow,
 } from '@/lib/spreadsheet';
@@ -102,10 +105,20 @@ export default function ExportImportDataPage() {
     return { exportFamilies: fList, exportCitizens: cList, scopeDescription: desc };
   }, [baseFamilies, baseCitizens, scopeType, selectedDusun, selectedRw, selectedRt]);
 
-  // Handle Export to CSV
+  // Handle Export to Native Excel (.xlsx) - Rekomendasi Utama (Rapi Per Kolom)
+  const handleExportExcel = () => {
+    const rows = prepareSpreadsheetRows(exportCitizens, exportFamilies);
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const safeScope = scopeDescription.replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = `Data_Penduduk_Desa_Karanghaur_${safeScope}_${timestamp}.xlsx`;
+
+    exportToExcel(rows, fileName);
+  };
+
+  // Handle Export to CSV (Khusus Excel Indonesia dengan separator titik-koma)
   const handleExportCsv = () => {
     const rows = prepareSpreadsheetRows(exportCitizens, exportFamilies);
-    const csvContent = generateCsv(rows);
+    const csvContent = generateCsvIndonesia(rows);
     const timestamp = new Date().toISOString().slice(0, 10);
     const safeScope = scopeDescription.replace(/[^a-zA-Z0-9]/g, '_');
     const fileName = `Data_Penduduk_Desa_Karanghaur_${safeScope}_${timestamp}.csv`;
@@ -135,8 +148,7 @@ export default function ExportImportDataPage() {
 
   // Handle Download Sample Template
   const handleDownloadTemplate = () => {
-    const templateContent = generateSampleTemplate();
-    downloadFile(templateContent, 'Template_Data_Kependudukan_Karanghaur.csv', 'text/csv;charset=utf-8;');
+    generateSampleTemplateWorkbook();
   };
 
   // --- CLOUD SUPABASE & GITHUB HANDLERS ---
@@ -174,8 +186,8 @@ export default function ExportImportDataPage() {
     }
   };
 
-  // Handle File Upload for Import
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle File Upload for Import (.xlsx, .xls, .csv, .json)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImportSuccess(null);
     setImportError(null);
 
@@ -183,33 +195,32 @@ export default function ExportImportDataPage() {
     if (!file) return;
 
     setImportFileName(file.name);
+    setIsProcessing(true);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        if (file.name.endsWith('.json')) {
-          const parsedJson = JSON.parse(text);
-          if (Array.isArray(parsedJson.families) && Array.isArray(parsedJson.citizens)) {
-            // JSON backup format
-            processJsonImport(parsedJson.families, parsedJson.citizens);
-          } else {
-            setImportError('Format berkas JSON tidak sesuai struktur backup database SIP Karanghaur.');
-          }
+    try {
+      if (file.name.endsWith('.json')) {
+        const text = await file.text();
+        const parsedJson = JSON.parse(text);
+        if (Array.isArray(parsedJson.families) && Array.isArray(parsedJson.citizens)) {
+          await processJsonImport(parsedJson.families, parsedJson.citizens);
         } else {
-          // CSV Spreadsheet format
-          const rows = parseCsv(text);
-          if (rows.length === 0) {
-            setImportError('Berkas CSV kosong atau tidak memiliki baris data.');
-            return;
-          }
-          setImportedRows(rows);
+          setImportError('Format berkas JSON tidak sesuai struktur backup database SIP Karanghaur.');
         }
-      } catch (err) {
-        setImportError('Gagal membaca berkas: Format tidak valid.');
+      } else {
+        // Universal Excel (.xlsx, .xls) & CSV parser
+        const rows = await parseSpreadsheetFile(file);
+        if (rows.length === 0) {
+          setImportError('Berkas kosong atau tidak memiliki baris data.');
+          setIsProcessing(false);
+          return;
+        }
+        setImportedRows(rows);
       }
-    };
-    reader.readAsText(file);
+    } catch (err: any) {
+      setImportError('Gagal membaca berkas: Pastikan file .xlsx, .xls, atau .csv Anda valid.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Process JSON Import
@@ -555,16 +566,36 @@ export default function ExportImportDataPage() {
           </div>
 
           {/* Action Download Buttons */}
-          <div className="space-y-2">
+          <div className="space-y-2.5">
+            {/* Primary Option: Native Excel .xlsx */}
+            <button
+              onClick={handleExportExcel}
+              disabled={exportCitizens.length === 0}
+              className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] flex flex-col items-center justify-center space-y-1 disabled:opacity-50"
+            >
+              <div className="flex items-center space-x-2">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-100" />
+                <span className="text-sm">Unduh File Excel Asli (.xlsx)</span>
+                <span className="bg-emerald-800 text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wide">
+                  Rapi Per Kolom
+                </span>
+              </div>
+              <span className="text-[10px] text-emerald-100/90 font-normal">
+                Langsung rapi di Excel: Kolom terpisah, lebar otomatis & NIK tidak terpotong
+              </span>
+            </button>
+
+            {/* Secondary Option: Indonesian Regional CSV */}
             <button
               onClick={handleExportCsv}
               disabled={exportCitizens.length === 0}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center space-x-2 disabled:opacity-50"
+              className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-300 transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5 disabled:opacity-50"
             >
-              <Download className="w-4 h-4" />
-              <span>Unduh Spreadsheet Excel / CSV (.csv)</span>
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Unduh Format CSV Excel Indonesia (.csv)</span>
             </button>
 
+            {/* Tertiary Option: JSON Backup */}
             <button
               onClick={handleExportJson}
               disabled={exportCitizens.length === 0}
@@ -576,7 +607,7 @@ export default function ExportImportDataPage() {
           </div>
 
           <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-            Format CSV dilengkapi UTF-8 BOM dan proteksi teks 16 digit angka sehingga No. KK dan NIK tidak rusak di Microsoft Excel atau Google Sheets.
+            Format <strong>.xlsx</strong> direkomendasikan agar tabel otomatis rapi per kolom di Microsoft Excel Windows tanpa perlu setting Text-to-Columns.
           </p>
         </div>
       )}
@@ -619,10 +650,10 @@ export default function ExportImportDataPage() {
               </span>
               <button
                 onClick={handleDownloadTemplate}
-                className="inline-flex items-center text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2.5 py-1 rounded-lg transition-colors border border-orange-200"
+                className="inline-flex items-center text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition-colors border border-emerald-200"
               >
                 <Download className="w-3.5 h-3.5 mr-1" />
-                Unduh Template CSV
+                Unduh Template Excel (.xlsx)
               </button>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
@@ -633,7 +664,7 @@ export default function ExportImportDataPage() {
           {/* Step 2: Upload File Box */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
             <span className="text-xs font-bold text-slate-800 block">
-              2. Unggah File Spreadsheet (.csv / .json)
+              2. Unggah File Spreadsheet (.xlsx / .csv / .json)
             </span>
 
             <div
@@ -645,14 +676,14 @@ export default function ExportImportDataPage() {
                 {importFileName ? importFileName : 'Klik atau Pilih Berkas Spreadsheet'}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Mendukung file .csv (Spreadsheet Excel) atau .json (Database Backup)
+                Mendukung file .xlsx (Excel Asli), .csv (Spreadsheet), atau .json (Backup)
               </p>
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv, application/json, text/csv"
+              accept=".xlsx,.xls,.csv,application/json,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={handleFileUpload}
               className="hidden"
             />
