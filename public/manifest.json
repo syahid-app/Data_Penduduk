@@ -1,0 +1,25 @@
+{
+  "name": "Sistem Data Kependudukan Desa Karanghaur",
+  "short_name": "SIP-Karanghaur",
+  "description": "Aplikasi Progressive Web App (PWA) Sistem Informasi Data Kependudukan Desa Karanghaur berbasis batas wilayah RT/RW/Dusun",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#ea580c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["government", "productivity", "utilities"]
+}
