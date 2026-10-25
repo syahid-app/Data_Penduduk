@@ -3,6 +3,9 @@ import { Family, Citizen, MaritalStatus, GenderType, PeneranganType, MckType, Ba
 import { getCitizenMaritalStatus, getFamilyHouseNumber } from './mockData';
 
 export interface ExportRow {
+  no_urut: number | string;
+  no_rumah: string;
+  no_urut_kk: number | string;
   no_kk: string;
   kepala_keluarga: string;
   nik: string;
@@ -16,7 +19,6 @@ export interface ExportRow {
   pendidikan_terakhir: string;
   pekerjaan: string;
   alamat: string;
-  no_rumah: string;
   rt: string;
   rw: string;
   dusun: string;
@@ -35,18 +37,60 @@ export function prepareSpreadsheetRows(
   const familyMap = new Map<string, Family>();
   families.forEach((f) => familyMap.set(f.id, f));
 
-  return citizens.map((c) => {
+  // Urutkan anggota keluarga: Kepala Keluarga terlebih dahulu, kemudian Istri, Anak, dst.
+  const hierarchyRank = (rel: string): number => {
+    const r = (rel || '').toLowerCase();
+    if (r.includes('kepala')) return 1;
+    if (r.includes('istri')) return 2;
+    if (r.includes('anak')) return 3;
+    if (r.includes('orang tua') || r.includes('mertua')) return 4;
+    return 5;
+  };
+
+  // Group citizens by family so members of the same family stay contiguous
+  const groupedCitizens = [...citizens].sort((a, b) => {
+    if (a.family_id !== b.family_id) {
+      return a.family_id.localeCompare(b.family_id);
+    }
+    return hierarchyRank(a.hubungan_keluarga) - hierarchyRank(b.hubungan_keluarga);
+  });
+
+  // Track sequence number for each unique family
+  const familySequenceMap = new Map<string, number>();
+  let currentKkSeq = 0;
+
+  return groupedCitizens.map((c, index) => {
     const f = familyMap.get(c.family_id);
     const houseNumber = getFamilyHouseNumber(f);
     const marital = getCitizenMaritalStatus(c);
 
+    // Nomor Urut KK tracking
+    const familyKey = c.family_id || (f?.no_kk ?? `unknown-${index}`);
+    if (!familySequenceMap.has(familyKey)) {
+      currentKkSeq++;
+      familySequenceMap.set(familyKey, currentKkSeq);
+    }
+    const noUrutKk = familySequenceMap.get(familyKey)!;
+
+    // Jenis Kelamin tanpa singkatan (Laki-laki / Perempuan)
+    let gender = 'Laki-laki';
+    const rawGender = String(c.jenis_kelamin || '').trim().toUpperCase();
+    if (rawGender === 'P' || rawGender.startsWith('PEREMPUAN') || rawGender.startsWith('PEREM')) {
+      gender = 'Perempuan';
+    } else {
+      gender = 'Laki-laki';
+    }
+
     return {
+      no_urut: index + 1,
+      no_rumah: houseNumber,
+      no_urut_kk: noUrutKk,
       no_kk: f?.no_kk || '',
       kepala_keluarga: f?.kepala_keluarga || '',
       nik: c.nik,
       nama_lengkap: c.nama_lengkap,
       hubungan_keluarga: c.hubungan_keluarga,
-      jenis_kelamin: c.jenis_kelamin,
+      jenis_kelamin: gender,
       tempat_lahir: c.tempat_lahir,
       tanggal_lahir: c.tanggal_lahir,
       status_perkawinan: marital,
@@ -54,7 +98,6 @@ export function prepareSpreadsheetRows(
       pendidikan_terakhir: c.pendidikan_terakhir,
       pekerjaan: c.pekerjaan,
       alamat: f?.alamat || '',
-      no_rumah: houseNumber,
       rt: f?.rt || '',
       rw: f?.rw || '',
       dusun: f?.dusun || '',
@@ -68,13 +111,17 @@ export function prepareSpreadsheetRows(
 }
 
 // Indonesian Header Labels for Excel Table
+// Sesuai permintaan: 1. Nomor Urut, 2. Nomor Rumah, 3. Nomor Urut KK, lalu sisa kolomnya
 export const SPREADSHEET_COLUMNS = [
+  { key: 'no_urut', label: 'Nomor Urut' },
+  { key: 'no_rumah', label: 'Nomor Rumah' },
+  { key: 'no_urut_kk', label: 'Nomor Urut KK' },
   { key: 'no_kk', label: 'Nomor Kartu Keluarga' },
   { key: 'kepala_keluarga', label: 'Nama Kepala Keluarga' },
   { key: 'nik', label: 'Nomor Induk Kependudukan (NIK)' },
   { key: 'nama_lengkap', label: 'Nama Lengkap Warga' },
   { key: 'hubungan_keluarga', label: 'Hubungan Keluarga' },
-  { key: 'jenis_kelamin', label: 'Jenis Kelamin (L/P)' },
+  { key: 'jenis_kelamin', label: 'Jenis Kelamin' },
   { key: 'tempat_lahir', label: 'Tempat Lahir' },
   { key: 'tanggal_lahir', label: 'Tanggal Lahir' },
   { key: 'status_perkawinan', label: 'Status Perkawinan' },
@@ -82,7 +129,6 @@ export const SPREADSHEET_COLUMNS = [
   { key: 'pendidikan_terakhir', label: 'Pendidikan Terakhir' },
   { key: 'pekerjaan', label: 'Pekerjaan' },
   { key: 'alamat', label: 'Alamat Lengkap' },
-  { key: 'no_rumah', label: 'Nomor Rumah' },
   { key: 'rt', label: 'RT' },
   { key: 'rw', label: 'RW' },
   { key: 'dusun', label: 'Dusun' },
@@ -96,9 +142,9 @@ export const SPREADSHEET_COLUMNS = [
 // Helper to format rows into ordered display dictionary
 function mapRowsToOrderedDict(rows: ExportRow[]) {
   return rows.map((r) => {
-    const item: Record<string, string> = {};
+    const item: Record<string, any> = {};
     SPREADSHEET_COLUMNS.forEach((col) => {
-      item[col.label] = (r as any)[col.key] || '';
+      item[col.label] = (r as any)[col.key] ?? '';
     });
     return item;
   });
@@ -107,6 +153,8 @@ function mapRowsToOrderedDict(rows: ExportRow[]) {
 /**
  * 1. NATIVE EXCEL (.xlsx) EXPORTER
  * Menghasilkan file Excel asli (.xlsx) dengan kolom rapi terpisah,
+ * Urutan kolom: 1. Nomor Urut, 2. Nomor Rumah, 3. Nomor Urut KK, dst.
+ * Jenis Kelamin: "Laki-laki" / "Perempuan",
  * NIK & KK bertipe teks (tidak terpotong jadi notasi ilmiah 3.21608E+15),
  * dan lebar kolom otomatis disesuaikan.
  */
@@ -125,19 +173,23 @@ export function exportToExcel(rows: ExportRow[], fileName: string) {
   });
   worksheet['!cols'] = colWidths;
 
-  // Set explicit string type for NIK & KK cells so Excel doesn't parse them as numbers
+  // Set explicit string type for NIK, No KK, Nomor Rumah, RT, RW so Excel preserves exact text
+  const colIndexMap = new Map<string, number>();
+  SPREADSHEET_COLUMNS.forEach((col, idx) => colIndexMap.set(col.key, idx));
+
+  const textKeys = ['no_rumah', 'no_kk', 'nik', 'rt', 'rw'];
+  const textColIndices = textKeys
+    .map((k) => colIndexMap.get(k))
+    .filter((idx): idx is number => idx !== undefined);
+
   const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
   for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-    // Column 0: Nomor Kartu Keluarga, Column 2: NIK
-    const cellKk = worksheet[XLSX.utils.encode_cell({ r: R, c: 0 })];
-    if (cellKk) {
-      cellKk.t = 's';
-      cellKk.z = '@';
-    }
-    const cellNik = worksheet[XLSX.utils.encode_cell({ r: R, c: 2 })];
-    if (cellNik) {
-      cellNik.t = 's';
-      cellNik.z = '@';
+    for (const c of textColIndices) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r: R, c })];
+      if (cell) {
+        cell.t = 's';
+        cell.z = '@';
+      }
     }
   }
 
@@ -164,9 +216,9 @@ export function generateCsvIndonesia(rows: ExportRow[]): string {
 
   rows.forEach((row) => {
     const line = SPREADSHEET_COLUMNS.map((col) => {
-      const val = String((row as any)[col.key] || '');
+      const val = String((row as any)[col.key] ?? '');
       // Format 16-digit numbers with ="..." so Excel preserves full text
-      if (col.key === 'no_kk' || col.key === 'nik') {
+      if (col.key === 'no_kk' || col.key === 'nik' || col.key === 'no_rumah') {
         return `="${val}"`;
       }
       return `"${val.replace(/"/g, '""')}"`;
@@ -219,21 +271,22 @@ export async function parseSpreadsheetFile(file: File): Promise<Record<string, s
   return rawRows.map((raw) => {
     const normalized: Record<string, string> = {};
     Object.keys(raw).forEach((origKey) => {
-      // Map standard Indonesian labels to clean internal keys
       const cleanKey = origKey
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '_')
         .replace(/^_+|_+$/g, '');
 
-      // Also provide standard aliases
       let mappedKey = cleanKey;
       if (cleanKey.includes('kartu_keluarga') || cleanKey === 'no_kk') mappedKey = 'no_kk';
       else if (cleanKey.includes('kepala_keluarga')) mappedKey = 'kepala_keluarga';
       else if (cleanKey.includes('nik') || cleanKey.includes('ktp')) mappedKey = 'nik';
       else if (cleanKey.includes('nama_lengkap') || cleanKey === 'nama') mappedKey = 'nama_lengkap';
       else if (cleanKey.includes('hubungan')) mappedKey = 'hubungan_keluarga';
-      else if (cleanKey.includes('jenis_kelamin')) mappedKey = 'jenis_kelamin';
-      else if (cleanKey.includes('perkawinan') || cleanKey.includes('nikah')) mappedKey = 'status_perkawinan';
+      else if (cleanKey.includes('jenis_kelamin') || cleanKey === 'gender') {
+        mappedKey = 'jenis_kelamin';
+        const gVal = String(raw[origKey] || '').toLowerCase();
+        normalized['jenis_kelamin'] = gVal.includes('p') || gVal.includes('perempuan') ? 'P' : 'L';
+      } else if (cleanKey.includes('perkawinan') || cleanKey.includes('nikah')) mappedKey = 'status_perkawinan';
       else if (cleanKey.includes('rumah')) mappedKey = 'no_rumah';
       else if (cleanKey.includes('alamat')) mappedKey = 'alamat';
 
@@ -268,12 +321,15 @@ export function parseCsv(csvText: string): Record<string, string>[] {
 export function generateSampleTemplateWorkbook(): void {
   const sampleRows: ExportRow[] = [
     {
+      no_urut: 1,
+      no_rumah: '01',
+      no_urut_kk: 1,
       no_kk: '3216081203000001',
       kepala_keluarga: 'SAMSUDIN',
       nik: '3216081205780001',
       nama_lengkap: 'SAMSUDIN',
       hubungan_keluarga: 'Kepala Keluarga',
-      jenis_kelamin: 'L',
+      jenis_kelamin: 'Laki-laki',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '1978-05-12',
       status_perkawinan: 'Kawin',
@@ -281,7 +337,6 @@ export function generateSampleTemplateWorkbook(): void {
       pendidikan_terakhir: 'SMA / Sederajat',
       pekerjaan: 'Buruh Harian Lepas',
       alamat: 'Jl. Balai Desa RT 001 / RW 001',
-      no_rumah: '01',
       rt: '001',
       rw: '001',
       dusun: 'Dusun I',
@@ -292,12 +347,15 @@ export function generateSampleTemplateWorkbook(): void {
       bantuan_sosial: 'pkh',
     },
     {
+      no_urut: 2,
+      no_rumah: '01',
+      no_urut_kk: 1,
       no_kk: '3216081203000001',
       kepala_keluarga: 'SAMSUDIN',
       nik: '3216085508820002',
       nama_lengkap: 'SITI AMINAH',
       hubungan_keluarga: 'Istri',
-      jenis_kelamin: 'P',
+      jenis_kelamin: 'Perempuan',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '1982-08-15',
       status_perkawinan: 'Kawin',
@@ -305,7 +363,6 @@ export function generateSampleTemplateWorkbook(): void {
       pendidikan_terakhir: 'SMP / Sederajat',
       pekerjaan: 'Mengurus Rumah Tangga',
       alamat: 'Jl. Balai Desa RT 001 / RW 001',
-      no_rumah: '01',
       rt: '001',
       rw: '001',
       dusun: 'Dusun I',
@@ -316,12 +373,15 @@ export function generateSampleTemplateWorkbook(): void {
       bantuan_sosial: 'pkh',
     },
     {
+      no_urut: 3,
+      no_rumah: '01',
+      no_urut_kk: 1,
       no_kk: '3216081203000001',
       kepala_keluarga: 'SAMSUDIN',
       nik: '3216081402050003',
       nama_lengkap: 'RIZKY RAMADHAN',
       hubungan_keluarga: 'Anak',
-      jenis_kelamin: 'L',
+      jenis_kelamin: 'Laki-laki',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '2005-02-14',
       status_perkawinan: 'Belum Kawin',
@@ -329,7 +389,6 @@ export function generateSampleTemplateWorkbook(): void {
       pendidikan_terakhir: 'SMA / Sederajat',
       pekerjaan: 'Pelajar / Mahasiswa',
       alamat: 'Jl. Balai Desa RT 001 / RW 001',
-      no_rumah: '01',
       rt: '001',
       rw: '001',
       dusun: 'Dusun I',
@@ -338,6 +397,32 @@ export function generateSampleTemplateWorkbook(): void {
       penerangan: 'meteran',
       fasilitas_mck: 'sendiri',
       bantuan_sosial: 'pkh',
+    },
+    {
+      no_urut: 4,
+      no_rumah: '14',
+      no_urut_kk: 2,
+      no_kk: '3216081203000002',
+      kepala_keluarga: 'ACHMAD SUHANDI',
+      nik: '3216082407750001',
+      nama_lengkap: 'ACHMAD SUHANDI',
+      hubungan_keluarga: 'Kepala Keluarga',
+      jenis_kelamin: 'Laki-laki',
+      tempat_lahir: 'Karawang',
+      tanggal_lahir: '1975-07-24',
+      status_perkawinan: 'Kawin',
+      agama: 'Islam',
+      pendidikan_terakhir: 'SMK / Sederajat',
+      pekerjaan: 'Karyawan Swasta',
+      alamat: 'Gg. Salak No. 14 RT 001 / RW 001',
+      rt: '001',
+      rw: '001',
+      dusun: 'Dusun I',
+      status_barcode: 'Ya',
+      status_update: 'Tidak',
+      penerangan: 'meteran',
+      fasilitas_mck: 'sendiri',
+      bantuan_sosial: 'bpnt',
     },
   ];
 
@@ -347,12 +432,15 @@ export function generateSampleTemplateWorkbook(): void {
 export function generateSampleTemplate(): string {
   return generateCsvIndonesia([
     {
+      no_urut: 1,
+      no_rumah: '01',
+      no_urut_kk: 1,
       no_kk: '3216081203000001',
       kepala_keluarga: 'SAMSUDIN',
       nik: '3216081205780001',
       nama_lengkap: 'SAMSUDIN',
       hubungan_keluarga: 'Kepala Keluarga',
-      jenis_kelamin: 'L',
+      jenis_kelamin: 'Laki-laki',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '1978-05-12',
       status_perkawinan: 'Kawin',
@@ -360,7 +448,6 @@ export function generateSampleTemplate(): string {
       pendidikan_terakhir: 'SMA / Sederajat',
       pekerjaan: 'Buruh Harian Lepas',
       alamat: 'Jl. Balai Desa RT 001 / RW 001',
-      no_rumah: '01',
       rt: '001',
       rw: '001',
       dusun: 'Dusun I',
