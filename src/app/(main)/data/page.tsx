@@ -108,9 +108,8 @@ export default function ExportImportDataPage() {
   // Handle Export to Native Excel (.xlsx) - Rekomendasi Utama (Rapi Per Kolom)
   const handleExportExcel = () => {
     const rows = prepareSpreadsheetRows(exportCitizens, exportFamilies);
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const safeScope = scopeDescription.replace(/[^a-zA-Z0-9]/g, '_');
-    const fileName = `Data_Penduduk_Desa_Karanghaur_${safeScope}_${timestamp}.xlsx`;
+    const timeStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fileName = `Data_Penduduk_Karanghaur_Terbaru_NoUrut_NoRumah_NoKK_${timeStr}.xlsx`;
 
     exportToExcel(rows, fileName);
   };
@@ -119,9 +118,8 @@ export default function ExportImportDataPage() {
   const handleExportCsv = () => {
     const rows = prepareSpreadsheetRows(exportCitizens, exportFamilies);
     const csvContent = generateCsvIndonesia(rows);
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const safeScope = scopeDescription.replace(/[^a-zA-Z0-9]/g, '_');
-    const fileName = `Data_Penduduk_Desa_Karanghaur_${safeScope}_${timestamp}.csv`;
+    const timeStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fileName = `Data_Penduduk_Karanghaur_Terbaru_NoUrut_NoRumah_NoKK_${timeStr}.csv`;
 
     downloadFile(csvContent, fileName, 'text/csv;charset=utf-8;');
   };
@@ -565,6 +563,26 @@ export default function ExportImportDataPage() {
             </p>
           </div>
 
+          {/* Format Penataan Kolom Terbaru Banner */}
+          <div className="bg-emerald-50 border border-emerald-300/80 rounded-xl p-3 text-[11px] text-emerald-950 space-y-1.5 shadow-xs">
+            <div className="flex items-center space-x-1.5 text-emerald-800 font-bold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>Format Kolom Terverifikasi (Versi 2.2):</span>
+            </div>
+            <div className="bg-white/80 rounded-lg p-2 border border-emerald-200/80 text-[10px] space-y-1 font-mono text-slate-800">
+              <div className="flex items-center text-emerald-800 font-bold">
+                <span>Kolom 1: Nomor Urut</span>
+                <span className="mx-1 text-slate-300">•</span>
+                <span>Kolom 2: Nomor Rumah</span>
+                <span className="mx-1 text-slate-300">•</span>
+                <span>Kolom 3: Nomor Urut KK</span>
+              </div>
+              <p className="text-[10px] text-slate-600 font-sans">
+                • <strong>Jenis Kelamin:</strong> Tertulis lengkap <em>Laki-laki</em> dan <em>Perempuan</em> (tanpa singkatan)
+              </p>
+            </div>
+          </div>
+
           {/* Action Download Buttons */}
           <div className="space-y-2.5">
             {/* Primary Option: Native Excel .xlsx */}
@@ -581,9 +599,19 @@ export default function ExportImportDataPage() {
                 </span>
               </div>
               <span className="text-[10px] text-emerald-100/90 font-normal">
-                Langsung rapi di Excel: Kolom terpisah, lebar otomatis & NIK tidak terpotong
+                1. No Urut | 2. No Rumah | 3. No Urut KK | NIK Teks Utuh
               </span>
             </button>
+
+            {/* Direct Server Download Link (Bypasses Any Browser Cache) */}
+            <a
+              href={`/api/export?format=xlsx&scope=${scopeType}&dusun=${encodeURIComponent(selectedDusun)}&rw=${selectedRw}&rt=${selectedRt}`}
+              download
+              className="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300 transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Unduh Langsung dari Server (.xlsx)</span>
+            </a>
 
             {/* Secondary Option: Indonesian Regional CSV */}
             <button

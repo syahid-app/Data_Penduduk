@@ -1,7 +1,5 @@
-const CACHE_NAME = 'desa-karanghaur-v1';
+const CACHE_NAME = 'desa-karanghaur-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/dashboard',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -24,6 +22,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('Deleting old SW cache:', key);
             return caches.delete(key);
           }
         })
@@ -34,19 +33,18 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first with cache fallback
   if (event.request.method !== 'GET') return;
-  
+  const url = new URL(event.request.url);
+
+  // NEVER cache API routes or dynamic downloads
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // Network first for all navigation and assets
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
         return response;
       })
       .catch(() => {
