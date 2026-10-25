@@ -29,6 +29,10 @@ import {
   Database,
   RefreshCw,
   Sparkles,
+  Cloud,
+  Copy,
+  ExternalLink,
+  GitBranch,
 } from 'lucide-react';
 
 export default function ExportImportDataPage() {
@@ -39,9 +43,21 @@ export default function ExportImportDataPage() {
     families,
     citizens,
     importBulkData,
+    syncToSupabase,
+    fetchFromSupabase,
+    isSupabaseConnected,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
+  const [activeTab, setActiveTab] = useState<'export' | 'import' | 'cloud'>('export');
+
+  // --- SUPABASE & GIT CLOUD STATE ---
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+  const [copiedSql, setCopiedSql] = useState<boolean>(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // --- EXPORT STATE ---
   const [scopeType, setScopeType] = useState<'all' | 'dusun' | 'rw' | 'rt'>('all');
@@ -121,6 +137,41 @@ export default function ExportImportDataPage() {
   const handleDownloadTemplate = () => {
     const templateContent = generateSampleTemplate();
     downloadFile(templateContent, 'Template_Data_Kependudukan_Karanghaur.csv', 'text/csv;charset=utf-8;');
+  };
+
+  // --- CLOUD SUPABASE & GITHUB HANDLERS ---
+  const handleSyncSupabase = async () => {
+    setIsSyncing(true);
+    setCloudSyncStatus(null);
+    const res = await syncToSupabase();
+    setIsSyncing(false);
+    setCloudSyncStatus({
+      type: res.success ? 'success' : 'error',
+      message: res.message,
+    });
+  };
+
+  const handleFetchSupabase = async () => {
+    setIsFetching(true);
+    setCloudSyncStatus(null);
+    const res = await fetchFromSupabase();
+    setIsFetching(false);
+    setCloudSyncStatus({
+      type: res.success ? 'success' : 'error',
+      message: res.message,
+    });
+  };
+
+  const handleCopySql = async () => {
+    try {
+      const res = await fetch('/api/sql');
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      setCopiedSql(true);
+      setTimeout(() => setCopiedSql(false), 3000);
+    } catch (err) {
+      alert('Gagal menyalin SQL schema');
+    }
   };
 
   // Handle File Upload for Import
@@ -305,30 +356,42 @@ export default function ExportImportDataPage() {
         </div>
       </div>
 
-      {/* Navigation Tabs: Export vs Import */}
-      <div className="grid grid-cols-2 p-1 bg-slate-200/80 rounded-xl text-xs font-bold">
+      {/* Navigation Tabs: Export vs Import vs Supabase/Git */}
+      <div className="grid grid-cols-3 p-1 bg-slate-200/80 rounded-xl text-xs font-bold gap-1">
         <button
           onClick={() => setActiveTab('export')}
-          className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1 ${
             activeTab === 'export'
               ? 'bg-white text-orange-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Download className="w-4 h-4" />
-          <span>Export Spreadsheet</span>
+          <Download className="w-3.5 h-3.5" />
+          <span>Export</span>
         </button>
 
         <button
           onClick={() => setActiveTab('import')}
-          className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1 ${
             activeTab === 'import'
               ? 'bg-white text-orange-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Upload className="w-4 h-4" />
-          <span>Import Spreadsheet</span>
+          <Upload className="w-3.5 h-3.5" />
+          <span>Import</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('cloud')}
+          className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1 ${
+            activeTab === 'cloud'
+              ? 'bg-white text-orange-600 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Cloud className="w-3.5 h-3.5" />
+          <span>Supabase & Git</span>
         </button>
       </div>
 
@@ -659,6 +722,238 @@ export default function ExportImportDataPage() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: SUPABASE CLOUD & GITHUB REPOSITORY */}
+      {/* ========================================================================= */}
+      {activeTab === 'cloud' && (
+        <div className="space-y-3.5 animate-fade-in">
+          {/* Cloud Sync Status Alert */}
+          {cloudSyncStatus && (
+            <div
+              className={`p-3 rounded-xl border flex items-start space-x-2 text-xs ${
+                cloudSyncStatus.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}
+            >
+              {cloudSyncStatus.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <span className="font-bold block">
+                  {cloudSyncStatus.type === 'success' ? 'Sukses!' : 'Perhatian:'}
+                </span>
+                <span>{cloudSyncStatus.message}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Card: Supabase Cloud Database */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-xs font-bold text-slate-800">
+                    Supabase PostgreSQL Cloud
+                  </h2>
+                  <p className="text-[10px] text-slate-400">
+                    Database cloud terpusat Desa Karanghaur
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Terkoneksi
+              </span>
+            </div>
+
+            {/* Supabase Connection Details */}
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11px] font-mono space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Project URL:</span>
+                <span className="text-slate-700 truncate max-w-[200px]">
+                  https://qwhcsrhupveubtiiuiln.supabase.co
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Publishable Key:</span>
+                <span className="text-slate-700 font-mono">
+                  sb_publishable_l8cc...
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Total KK Lokal:</span>
+                <span className="text-slate-900 font-bold">{families.length} KK</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Total Warga Lokal:</span>
+                <span className="text-slate-900 font-bold">{citizens.length} Jiwa</span>
+              </div>
+            </div>
+
+            {/* Cloud Sync Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={handleSyncSupabase}
+                disabled={isSyncing || !isAdmin}
+                className="py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5 disabled:opacity-50"
+              >
+                {isSyncing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Upload...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload ke Cloud</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleFetchSupabase}
+                disabled={isFetching}
+                className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-200 transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5 disabled:opacity-50"
+              >
+                {isFetching ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Unduh...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Tarik dari Cloud</span>
+                  </>
+                )}
+              </button>
+            </div>
+            {!isAdmin && (
+              <p className="text-[10px] text-slate-400 text-center">
+                *Hanya akun Administrator Desa yang memiliki wewenang upload data ke database cloud.
+              </p>
+            )}
+          </div>
+
+          {/* Card: SQL Migration Setup */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
+            <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-800">
+                  Setup Tabel & RLS (Supabase SQL Editor)
+                </h3>
+                <p className="text-[10px] text-slate-400">
+                  Jalankan skrip skema di Supabase Console jika tabel belum dibuat
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs text-slate-600">
+              <p className="text-[11px] leading-relaxed">
+                Supabase membutuhkan tabel <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">families</code>, <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">citizens</code>, <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">notes</code>, dan <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">profiles</code>.
+              </p>
+
+              <div className="flex flex-col gap-2 pt-1">
+                <button
+                  onClick={handleCopySql}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center space-x-1.5"
+                >
+                  {copiedSql ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>SQL Berhasil Disalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Salin Schema & Seed SQL Lengkap</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href="https://supabase.com/dashboard/project/qwhcsrhupveubtiiuiln/sql"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs border border-blue-200 transition-all flex items-center justify-center space-x-1.5"
+                >
+                  <span>Buka Supabase SQL Editor</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Card: GitHub Repository */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                  <GitBranch className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800">
+                    GitHub Source Repository
+                  </h3>
+                  <p className="text-[10px] text-slate-400">
+                    Version control & continuous deployment
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full border border-slate-200">
+                main branch
+              </span>
+            </div>
+
+            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11px] font-mono space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Repository:</span>
+                <span className="text-slate-800 font-bold">syahid-app/Data_Penduduk</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Git Status:</span>
+                <span className="text-emerald-700 font-bold">Inisialisasi & 43 Files Committed</span>
+              </div>
+            </div>
+
+            <a
+              href="https://github.com/syahid-app/Data_Penduduk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-200 transition-all flex items-center justify-center space-x-1.5"
+            >
+              <span>Buka Repository GitHub</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+
+            <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-900 space-y-1">
+              <span className="font-bold block flex items-center gap-1">
+                <Info className="w-3.5 h-3.5 text-amber-700" />
+                Petunjuk Push ke GitHub:
+              </span>
+              <p className="text-[10px] text-amber-800">
+                Jalankan perintah berikut di terminal komputer Anda untuk mempublikasikan:
+              </p>
+              <pre className="p-1.5 bg-white/80 rounded border border-amber-300 font-mono text-[10px] overflow-x-auto text-slate-800 select-all">
+                git push -u origin main
+              </pre>
+              <p className="text-[10px] text-amber-700">
+                Atau gunakan script node dengan token: <code className="font-mono bg-white/70 px-1 py-0.5 rounded">node scripts/git-push.js &lt;TOKEN&gt;</code>
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

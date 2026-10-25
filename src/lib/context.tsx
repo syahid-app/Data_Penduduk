@@ -52,6 +52,9 @@ interface AppContextType {
   updateCitizen: (id: string, partial: Partial<Citizen>) => Promise<{ success: boolean; error?: string }>;
   deleteCitizen: (id: string) => Promise<{ success: boolean; error?: string }>;
   importBulkData: (incomingFamilies: Family[], incomingCitizens: Citizen[]) => Promise<{ success: boolean; familiesCount: number; citizensCount: number; error?: string }>;
+  syncToSupabase: () => Promise<{ success: boolean; message: string }>;
+  fetchFromSupabase: () => Promise<{ success: boolean; message: string; count: number }>;
+  isSupabaseConnected: boolean;
   getFamilyById: (id: string) => Family | undefined;
   getCitizensByFamilyId: (familyId: string) => Citizen[];
 }
@@ -434,6 +437,85 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   };
 
+  const syncToSupabase = async () => {
+    if (!supabase || !isSupabaseConfigured) {
+      return { success: false, message: 'Supabase URL & Anon Key belum terkonfigurasi di .env.local.' };
+    }
+
+    try {
+      // Upsert families
+      const { error: famErr } = await supabase.from('families').upsert(families, { onConflict: 'no_kk' });
+      if (famErr) throw famErr;
+
+      // Upsert citizens
+      const { error: citErr } = await supabase.from('citizens').upsert(citizens, { onConflict: 'nik' });
+      if (citErr) throw citErr;
+
+      // Upsert notes
+      if (notes.length > 0) {
+        const { error: noteErr } = await supabase.from('notes').upsert(notes, { onConflict: 'id' });
+        if (noteErr) throw noteErr;
+      }
+
+      return {
+        success: true,
+        message: `Berhasil menyinkronkan ${families.length} KK dan ${citizens.length} Warga ke Supabase Cloud!`,
+      };
+    } catch (err: any) {
+      console.error('Supabase sync error:', err);
+      return {
+        success: false,
+        message: err.message || 'Gagal menyinkronkan ke Supabase. Pastikan tabel di Supabase SQL Editor sudah dibuat.',
+      };
+    }
+  };
+
+  const fetchFromSupabase = async () => {
+    if (!supabase || !isSupabaseConfigured) {
+      return { success: false, message: 'Supabase URL & Anon Key belum terkonfigurasi di .env.local.', count: 0 };
+    }
+
+    try {
+      const { data: famData, error: famErr } = await supabase.from('families').select('*').order('created_at', { ascending: false });
+      if (famErr) throw famErr;
+
+      const { data: citData, error: citErr } = await supabase.from('citizens').select('*');
+      if (citErr) throw citErr;
+
+      const { data: noteData, error: noteErr } = await supabase.from('notes').select('*');
+      if (noteErr) throw noteErr;
+
+      let count = 0;
+      if (famData && famData.length > 0) {
+        setFamilies(famData);
+        localStorage.setItem(STORAGE_KEYS.FAMILIES, JSON.stringify(famData));
+        count += famData.length;
+      }
+      if (citData && citData.length > 0) {
+        setCitizens(citData);
+        localStorage.setItem(STORAGE_KEYS.CITIZENS, JSON.stringify(citData));
+        count += citData.length;
+      }
+      if (noteData && noteData.length > 0) {
+        setNotes(noteData);
+        localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(noteData));
+      }
+
+      return {
+        success: true,
+        message: `Berhasil mengunduh ${famData?.length || 0} KK dan ${citData?.length || 0} Warga dari Supabase Cloud.`,
+        count,
+      };
+    } catch (err: any) {
+      console.error('Supabase fetch error:', err);
+      return {
+        success: false,
+        message: err.message || 'Gagal memuat data dari Supabase. Pastikan tabel sudah dibuat via SQL Editor.',
+        count: 0,
+      };
+    }
+  };
+
   const getFamilyById = (id: string) => {
     return families.find((f) => f.id === id);
   };
@@ -467,6 +549,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateCitizen,
         deleteCitizen,
         importBulkData,
+        syncToSupabase,
+        fetchFromSupabase,
+        isSupabaseConnected: isSupabaseConfigured,
         getFamilyById,
         getCitizensByFamilyId,
       }}
