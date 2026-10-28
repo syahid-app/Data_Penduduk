@@ -202,12 +202,12 @@ function WargaListContent() {
         {/* Row 1: Title, Summary Counts & Add Citizen Button */}
         <div className="flex items-center justify-between flex-wrap gap-1.5">
           <div className="flex items-center flex-wrap gap-1.5 min-w-0">
-            <Users className="w-4 h-4 text-orange-600 flex-shrink-0" />
+            <Users className="w-4 h-4 text-blue-600 flex-shrink-0" />
             <h1 className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
               Tabel Data Warga
             </h1>
             <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
                 {filteredCitizens.length}/{visibleCitizens.length} Jiwa
               </span>
               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-200">
@@ -225,7 +225,7 @@ function WargaListContent() {
                 setEditingCitizen(null);
                 setIsCitizenFormOpen(true);
               }}
-              className="inline-flex items-center text-[11px] font-bold bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1 rounded-lg shadow-sm transition-all active:scale-95 flex-shrink-0"
+              className="inline-flex items-center text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg shadow-sm transition-all active:scale-95 flex-shrink-0"
             >
               <UserPlus className="w-3.5 h-3.5 mr-1" />
               <span>+ Warga</span>
@@ -245,7 +245,7 @@ function WargaListContent() {
                 setCurrentPage(1);
               }}
               placeholder="Cari NIK, Nama, No KK, Pekerjaan..."
-              className="w-full pl-7 pr-6 py-1.5 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-900 focus:ring-1 focus:ring-orange-500 outline-none"
+              className="w-full pl-7 pr-6 py-1.5 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
             />
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" />
             {searchQuery && (
@@ -264,7 +264,7 @@ function WargaListContent() {
           {isAnyFilterActive && (
             <button
               onClick={handleResetFilters}
-              className="px-2.5 py-1.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 font-bold flex items-center gap-1 text-[11px] flex-shrink-0"
+              className="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 font-bold flex items-center gap-1 text-[11px] flex-shrink-0"
               title="Reset Semua Filter"
             >
               <RotateCcw className="w-3 h-3" />
@@ -281,7 +281,7 @@ function WargaListContent() {
               setMaritalFilter(e.target.value as 'all' | MaritalStatus);
               setCurrentPage(1);
             }}
-            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-orange-500"
+            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-blue-500"
             title="Filter Status Perkawinan"
           >
             <option value="all">Semua Status</option>
@@ -297,7 +297,7 @@ function WargaListContent() {
               setAgeFilter(e.target.value as 'all' | 'ktp' | 'lansia' | 'anak');
               setCurrentPage(1);
             }}
-            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-orange-500"
+            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-blue-500"
             title="Filter Kategori Usia"
           >
             <option value="all">Semua Usia</option>
@@ -312,7 +312,7 @@ function WargaListContent() {
               setFamilyFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-orange-500"
+            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-blue-500"
             title="Filter Kartu Keluarga"
           >
             <option value="all">Semua KK ({visibleFamilies.length})</option>
@@ -329,7 +329,7 @@ function WargaListContent() {
               setHouseFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-orange-500"
+            className="w-full py-1.5 px-2 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-700 font-medium outline-none focus:ring-1 focus:ring-blue-500"
             title="Filter Nomor Rumah"
           >
             <option value="all">Semua Rumah</option>
@@ -380,7 +380,7 @@ function WargaListContent() {
                       {isAnyFilterActive && (
                         <button
                           onClick={handleResetFilters}
-                          className="mt-2 px-3 py-1 bg-orange-600 text-white rounded-lg text-[11px] font-semibold hover:bg-orange-700"
+                          className="mt-2 px-3 py-1 bg-blue-600 text-white rounded-lg text-[11px] font-semibold hover:bg-blue-700"
                         >
                           Reset Filter
                         </button>
@@ -399,7 +399,7 @@ function WargaListContent() {
                       <tr
                         key={citizen.id}
                         onClick={() => setSelectedCitizenForDetail(citizen)}
-                        className="even:bg-slate-50/50 hover:bg-orange-50/60 cursor-pointer transition-colors group"
+                        className="even:bg-slate-50/50 hover:bg-blue-50/60 cursor-pointer transition-colors group"
                       >
                         {/* 1. No */}
                         <td className="py-1.5 px-2.5 text-center font-mono text-[10px] text-slate-400 whitespace-nowrap">
@@ -414,7 +414,7 @@ function WargaListContent() {
                             </span>
                             <button
                               onClick={(e) => handleCopyNik(citizen.nik, e)}
-                              className="p-0.5 text-slate-400 hover:text-orange-600 rounded"
+                              className="p-0.5 text-slate-400 hover:text-blue-600 rounded"
                               title="Salin NIK"
                             >
                               {copiedNik === citizen.nik ? (
@@ -485,7 +485,7 @@ function WargaListContent() {
                               <Link
                                 href={`/kk/${family.id}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="font-mono text-[10px] font-bold text-orange-600 hover:underline inline-flex items-center gap-0.5"
+                                className="font-mono text-[10px] font-bold text-blue-600 hover:underline inline-flex items-center gap-0.5"
                                 title={`KK: ${family.kepala_keluarga}`}
                               >
                                 <span>{family.no_kk}</span>
@@ -518,7 +518,7 @@ function WargaListContent() {
 
                         {/* 12. Aksi */}
                         <td
-                          className="py-1 px-2 text-center whitespace-nowrap sm:sticky sm:right-0 bg-white group-even:bg-slate-50 group-hover:bg-orange-50/90 sm:shadow-[-1px_0_0_rgba(241,245,249,1)]"
+                          className="py-1 px-2 text-center whitespace-nowrap sm:sticky sm:right-0 bg-white group-even:bg-slate-50 group-hover:bg-blue-50/90 sm:shadow-[-1px_0_0_rgba(241,245,249,1)]"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center justify-center gap-1">
@@ -535,7 +535,7 @@ function WargaListContent() {
                                 setSelectedCitizenForNote(citizen);
                                 setIsNoteModalOpen(true);
                               }}
-                              className="p-1 text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-600 rounded border border-orange-200 transition-colors"
+                              className="p-1 text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded border border-blue-200 transition-colors"
                               title="Kirim Catatan"
                             >
                               <MessageSquarePlus className="w-3 h-3" />
@@ -643,7 +643,7 @@ function WargaListContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[88dvh] flex flex-col overflow-hidden animate-slide-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-4 text-white flex items-center justify-between flex-shrink-0">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white flex items-center justify-between flex-shrink-0">
               <div className="flex items-center space-x-2.5 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-white/20 border border-white/40 flex items-center justify-center font-bold text-base flex-shrink-0">
                   {selectedCitizenForDetail.jenis_kelamin === 'L' ? 'L' : 'P'}
@@ -652,7 +652,7 @@ function WargaListContent() {
                   <h3 className="font-extrabold text-sm break-words uppercase leading-snug">
                     {selectedCitizenForDetail.nama_lengkap}
                   </h3>
-                  <p className="font-mono text-xs text-orange-100">
+                  <p className="font-mono text-xs text-blue-100">
                     NIK: {selectedCitizenForDetail.nik}
                   </p>
                 </div>
@@ -689,7 +689,7 @@ function WargaListContent() {
 
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-orange-600" />
+                  <Users className="w-3.5 h-3.5 text-blue-600" />
                   Identitas Pribadi
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -799,9 +799,9 @@ function WargaListContent() {
                 return fam ? (
                   <Link
                     href={`/kk/${fam.id}`}
-                    className="inline-flex items-center text-xs font-bold text-slate-700 hover:text-orange-600 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"
+                    className="inline-flex items-center text-xs font-bold text-slate-700 hover:text-blue-600 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"
                   >
-                    <FileText className="w-3.5 h-3.5 mr-1 text-orange-600" />
+                    <FileText className="w-3.5 h-3.5 mr-1 text-blue-600" />
                     Buka Kartu Keluarga
                   </Link>
                 ) : (
@@ -830,7 +830,7 @@ function WargaListContent() {
                     setSelectedCitizenForDetail(null);
                     setIsNoteModalOpen(true);
                   }}
-                  className="inline-flex items-center text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-xl shadow-sm"
+                  className="inline-flex items-center text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl shadow-sm"
                 >
                   <MessageSquarePlus className="w-3.5 h-3.5 mr-1" />
                   Buat Catatan

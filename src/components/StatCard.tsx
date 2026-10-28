@@ -24,10 +24,10 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const schemeStyles = {
     orange: {
-      bg: 'bg-orange-50/80',
-      iconBg: 'bg-orange-500 text-white',
-      border: 'border-orange-100 hover:border-orange-300',
-      text: 'text-orange-600',
+      bg: 'bg-blue-50/80',
+      iconBg: 'bg-blue-500 text-white',
+      border: 'border-blue-100 hover:border-blue-300',
+      text: 'text-blue-600',
     },
     blue: {
       bg: 'bg-blue-50/80',

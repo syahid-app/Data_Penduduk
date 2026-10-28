@@ -327,7 +327,7 @@ export default function ExportImportDataPage() {
             </div>
           </div>
 
-          <span className="inline-flex items-center text-[10px] font-bold px-2 py-1 rounded-full bg-orange-100 text-orange-800 border border-orange-200 flex-shrink-0">
+          <span className="inline-flex items-center text-[10px] font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200 flex-shrink-0">
             <Database className="w-3 h-3 mr-1" />
             Supabase DB
           </span>
@@ -339,7 +339,7 @@ export default function ExportImportDataPage() {
             onClick={() => setActiveTab('export')}
             className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
               activeTab === 'export'
-                ? 'bg-white text-orange-600 shadow-sm'
+                ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -351,7 +351,7 @@ export default function ExportImportDataPage() {
             onClick={() => setActiveTab('import')}
             className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
               activeTab === 'import'
-                ? 'bg-white text-orange-600 shadow-sm'
+                ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -363,7 +363,7 @@ export default function ExportImportDataPage() {
             onClick={() => setActiveTab('cloud')}
             className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
               activeTab === 'cloud'
-                ? 'bg-white text-orange-600 shadow-sm'
+                ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -382,7 +382,7 @@ export default function ExportImportDataPage() {
           <div className="space-y-3.5">
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm space-y-3">
               <div className="flex items-center space-x-1.5 pb-2 border-b border-slate-100">
-                <Filter className="w-4 h-4 text-orange-600" />
+                <Filter className="w-4 h-4 text-blue-600" />
                 <h2 className="text-xs font-bold text-slate-800">
                   Pilih Cakupan Wilayah Export
                 </h2>
@@ -394,7 +394,7 @@ export default function ExportImportDataPage() {
                     onClick={() => setScopeType('all')}
                     className={`p-2 rounded-xl text-xs font-bold border transition-all text-center ${
                       scopeType === 'all'
-                        ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
@@ -407,7 +407,7 @@ export default function ExportImportDataPage() {
                     onClick={() => setScopeType('dusun')}
                     className={`p-2 rounded-xl text-xs font-bold border transition-all text-center ${
                       scopeType === 'dusun'
-                        ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
@@ -420,7 +420,7 @@ export default function ExportImportDataPage() {
                     onClick={() => setScopeType('rw')}
                     className={`p-2 rounded-xl text-xs font-bold border transition-all text-center ${
                       scopeType === 'rw'
-                        ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
@@ -432,7 +432,7 @@ export default function ExportImportDataPage() {
                   onClick={() => setScopeType('rt')}
                   className={`p-2 rounded-xl text-xs font-bold border transition-all text-center ${
                     scopeType === 'rt'
-                      ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
@@ -515,7 +515,7 @@ export default function ExportImportDataPage() {
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="p-2.5 bg-white rounded-lg border border-slate-200">
                   <span className="text-[10px] text-slate-400 font-bold block">TOTAL KK</span>
-                  <span className="text-lg font-extrabold text-orange-600">
+                  <span className="text-lg font-extrabold text-blue-600">
                     {exportFamilies.length}
                   </span>
                 </div>
@@ -650,9 +650,9 @@ export default function ExportImportDataPage() {
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-orange-300 hover:border-orange-500 bg-orange-50/40 rounded-xl p-6 text-center cursor-pointer transition-all group"
+                className="border-2 border-dashed border-blue-300 hover:border-blue-500 bg-blue-50/40 rounded-xl p-6 text-center cursor-pointer transition-all group"
               >
-                <Upload className="w-8 h-8 text-orange-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
                 <p className="text-xs font-bold text-slate-800">
                   {importFileName ? importFileName : 'Klik atau Pilih Berkas Spreadsheet'}
                 </p>
@@ -715,7 +715,7 @@ export default function ExportImportDataPage() {
                 <button
                   onClick={handleConfirmCsvImport}
                   disabled={isProcessing || !isAdmin}
-                  className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5 disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <>
@@ -805,7 +805,7 @@ export default function ExportImportDataPage() {
                 <button
                   onClick={handleSyncSupabase}
                   disabled={isSyncing || !isAdmin}
-                  className="py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                  className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5 disabled:opacity-50"
                 >
                   {isSyncing ? (
                     <>
@@ -862,7 +862,7 @@ export default function ExportImportDataPage() {
 
               <div className="space-y-2 text-xs text-slate-600">
                 <p className="text-[11px] leading-relaxed">
-                  Supabase membutuhkan tabel <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">families</code>, <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">citizens</code>, <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">notes</code>, dan <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-orange-600">profiles</code>.
+                  Supabase membutuhkan tabel <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-blue-600">families</code>, <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-blue-600">citizens</code>, <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-blue-600">notes</code>, dan <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-blue-600">profiles</code>.
                 </p>
 
                 <div className="flex flex-col gap-2 pt-1">

@@ -127,7 +127,7 @@ export default function KKDetailPage() {
                 setSelectedCitizenForNote(null);
                 setIsNoteModalOpen(true);
               }}
-              className="inline-flex items-center text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1.5 rounded-xl shadow-sm transition-all"
+              className="inline-flex items-center text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl shadow-sm transition-all"
             >
               <MessageSquarePlus className="w-3.5 h-3.5 mr-1" />
               Kirim Catatan
@@ -144,7 +144,7 @@ export default function KKDetailPage() {
         <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm space-y-3">
           <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
             <div>
-              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
                 KARTU KELUARGA DESA KARANGHAUR
               </span>
               <h1 className="text-base font-extrabold text-slate-900 mt-0.5 uppercase">
@@ -186,7 +186,7 @@ export default function KKDetailPage() {
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
               <span className="text-[10px] text-slate-400 block font-semibold">Wilayah & Alamat</span>
               <div className="flex items-center text-slate-800 font-bold mt-0.5">
-                <MapPin className="w-3.5 h-3.5 text-orange-600 mr-1 flex-shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-blue-600 mr-1 flex-shrink-0" />
                 <span>
                   RT {family.rt} / RW {family.rw} • Rumah No. {getFamilyHouseNumber(family)} ({family.dusun})
                 </span>
@@ -221,7 +221,7 @@ export default function KKDetailPage() {
           <div className="px-3.5 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2">
             <div>
               <h2 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-orange-600" />
+                <Users className="w-4 h-4 text-blue-600" />
                 Tabel Anggota Keluarga ({members.length} Jiwa)
               </h2>
             </div>
@@ -232,7 +232,7 @@ export default function KKDetailPage() {
                   setEditingCitizen(null);
                   setIsCitizenModalOpen(true);
                 }}
-                className="inline-flex items-center text-[11px] font-bold bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1 rounded-lg transition-colors shadow-sm"
+                className="inline-flex items-center text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg transition-colors shadow-sm"
               >
                 <UserPlus className="w-3 h-3 mr-1" />
                 Tambah Anggota
@@ -269,7 +269,7 @@ export default function KKDetailPage() {
                     const marital = getCitizenMaritalStatus(member);
 
                     return (
-                      <tr key={member.id} className="even:bg-slate-50/50 hover:bg-orange-50/50 transition-colors">
+                      <tr key={member.id} className="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
                         <td className="py-2 px-2.5 text-center font-mono text-[10px] text-slate-400 whitespace-nowrap">
                           {idx + 1}
                         </td>
@@ -332,7 +332,7 @@ export default function KKDetailPage() {
                                 setSelectedCitizenForNote(member);
                                 setIsNoteModalOpen(true);
                               }}
-                              className="p-1 rounded bg-orange-50 hover:bg-orange-600 text-orange-600 hover:text-white border border-orange-200 transition-colors"
+                              className="p-1 rounded bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 transition-colors"
                               title="Catat Warga"
                             >
                               <MessageSquarePlus className="w-3 h-3" />

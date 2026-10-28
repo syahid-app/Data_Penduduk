@@ -67,7 +67,7 @@ export const BottomNav: React.FC = () => {
               href={item.href}
               className={`flex flex-col items-center justify-center py-1 transition-all group relative ${
                 isActive
-                  ? 'text-orange-600 font-bold'
+                  ? 'text-blue-600 font-bold'
                   : 'text-slate-500 hover:text-slate-800 font-medium'
               }`}
             >
@@ -79,7 +79,7 @@ export const BottomNav: React.FC = () => {
                 >
                   <Icon
                     className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${
-                      isActive ? 'text-orange-600 stroke-[2.4]' : 'text-slate-500'
+                      isActive ? 'text-blue-600 stroke-[2.4]' : 'text-slate-500'
                     }`}
                   />
                 </div>
@@ -93,14 +93,14 @@ export const BottomNav: React.FC = () => {
 
               <span
                 className={`text-[10px] leading-tight mt-0.5 tracking-tight whitespace-nowrap transition-all ${
-                  isActive ? 'text-orange-600 font-bold' : 'text-slate-500'
+                  isActive ? 'text-blue-600 font-bold' : 'text-slate-500'
                 }`}
               >
                 {item.label}
               </span>
 
               {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-600 mt-0.5" />
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-0.5" />
               )}
             </Link>
           );

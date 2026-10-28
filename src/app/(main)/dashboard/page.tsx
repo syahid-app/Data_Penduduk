@@ -13,7 +13,7 @@ import { Family } from '@/lib/types';
 import {
   FileSpreadsheet,
   Users,
-  IdCard,
+  Home,
   MessageSquareWarning,
   ArrowRight,
   TrendingUp,
@@ -38,6 +38,13 @@ export default function DashboardPage() {
   };
 
   const pendingNotes = visibleNotes.filter((n) => n.status === 'pending');
+  const kkBarcodeCount = visibleFamilies.filter((f) => f.status_barcode).length;
+  const plnMeteranCount = visibleFamilies.filter(
+    (f) => f.penerangan === 'meteran'
+  ).length;
+  const mckSendiriCount = visibleFamilies.filter(
+    (f) => f.fasilitas_mck === 'sendiri'
+  ).length;
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -45,9 +52,9 @@ export default function DashboardPage() {
       {/* FIXED TOP HEAD BAR (Wilayah Otoritas - Tidak ikut scrolling)          */}
       {/* ===================================================================== */}
       <div className="flex-shrink-0 px-3.5 sm:px-5 pt-2.5 pb-2 bg-slate-50 border-b border-slate-200/80 z-10">
-        <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl p-3 text-white shadow-sm flex items-center justify-between gap-2">
+        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 rounded-xl p-3 text-white shadow-sm flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center space-x-1.5 text-orange-100 text-[10px] font-semibold">
+            <div className="flex items-center space-x-1.5 text-blue-100 text-[10px] font-semibold">
               <Building className="w-3 h-3 flex-shrink-0" />
               <span>Wilayah Otoritas Aktif:</span>
             </div>
@@ -73,7 +80,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-2 px-0.5">
             <span className="text-xs font-bold text-slate-800 tracking-tight flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-orange-600" />
+              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
               Ringkasan Statistik Wilayah
             </span>
             <span className="text-[10px] text-emerald-600 font-bold">● Sinkron Real-time</span>
@@ -83,9 +90,9 @@ export default function DashboardPage() {
             <StatCard
               title="Total KK"
               value={stats.totalKK}
-              subtitle={`${stats.totalRumah} Rumah Terdata`}
+              subtitle={`${kkBarcodeCount} Barcode • ${stats.totalKK - kkBarcodeCount} Belum`}
               icon={FileSpreadsheet}
-              colorScheme="orange"
+              colorScheme="blue"
               onClick={() => router.push('/kk')}
               badge="Dukcapil"
             />
@@ -100,12 +107,12 @@ export default function DashboardPage() {
             />
 
             <StatCard
-              title="Wajib KTP (17+)"
-              value={stats.wajibKtp}
-              subtitle={`${stats.lansia} Jiwa Lansia (60+)`}
-              icon={IdCard}
+              title="Jumlah Rumah"
+              value={stats.totalRumah}
+              subtitle={`PLN: ${plnMeteranCount} • MCK: ${mckSendiriCount}`}
+              icon={Home}
               colorScheme="emerald"
-              onClick={() => router.push('/warga?age=ktp')}
+              onClick={() => router.push('/kk')}
             />
 
             <StatCard
@@ -131,7 +138,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-sm space-y-2.5">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <div className="flex items-center space-x-1.5">
-              <HeartHandshake className="w-4 h-4 text-orange-600" />
+              <HeartHandshake className="w-4 h-4 text-blue-600" />
               <span className="text-xs font-bold text-slate-800">
                 Jaminan Kesehatan & Bansos Wilayah
               </span>
@@ -162,7 +169,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center justify-between pt-1 text-[11px] text-slate-600 flex-wrap gap-1">
             <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-              <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 font-bold text-[10px]">
+              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">
                 BPNT: {stats.bansosBpnt} KK
               </span>
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
@@ -194,7 +201,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/kk"
-              className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-0.5"
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
             >
               <span>Semua KK</span>
               <ArrowRight className="w-3.5 h-3.5" />

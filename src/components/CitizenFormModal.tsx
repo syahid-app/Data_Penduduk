@@ -139,7 +139,7 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
         {/* Fixed Modal Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 flex-shrink-0 bg-white">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
               {editCitizen ? <Edit3 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             </div>
             <div>
@@ -174,7 +174,7 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
             <select
               value={familyId}
               onChange={(e) => setFamilyId(e.target.value)}
-              className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">-- Pilih Kartu Keluarga --</option>
@@ -197,7 +197,7 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
                 value={nik}
                 onChange={(e) => setNik(e.target.value.replace(/\D/g, ''))}
                 placeholder="321608..."
-                className="w-full p-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full p-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -211,7 +211,7 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
                 value={namaLengkap}
                 onChange={(e) => setNamaLengkap(e.target.value)}
                 placeholder="NAMA LENGKAP"
-                className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none uppercase focus:ring-2 focus:ring-orange-500"
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none uppercase focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -386,7 +386,7 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm flex items-center justify-center space-x-1"
+              className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center justify-center space-x-1"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Menyimpan...' : editCitizen ? 'Simpan Perubahan' : 'Simpan Warga'}</span>

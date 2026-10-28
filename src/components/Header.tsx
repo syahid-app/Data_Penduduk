@@ -58,7 +58,7 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="w-full bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white shadow-sm select-none">
+      <header className="w-full bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 text-white shadow-sm select-none">
         {/* Top bar with user role & notifications */}
         <div className="px-3 sm:px-5 pt-2.5 pb-2">
           <div className="flex items-start justify-between gap-2">
@@ -97,7 +97,7 @@ export const Header: React.FC = () => {
                     <MapPin className="w-2.5 h-2.5 mr-0.5 text-amber-200 flex-shrink-0" />
                     <span>{getRoleLabel()}</span>
                   </span>
-                  <span className="text-[10px] text-orange-50 font-medium leading-tight">
+                  <span className="text-[10px] text-blue-50 font-medium leading-tight">
                     • {getScopeDescription()}
                   </span>
                 </div>
@@ -157,9 +157,9 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Sub-strip banner with Supabase sync time */}
-        <div className="bg-orange-700/60 px-3 sm:px-5 py-1 flex items-center justify-between gap-2 text-[10px] text-orange-100 border-t border-orange-500/30">
+        <div className="bg-blue-800/60 px-3 sm:px-5 py-1 flex items-center justify-between gap-2 text-[10px] text-blue-100 border-t border-blue-500/30">
           <span className="flex items-center gap-1 font-medium leading-tight">
-            <Sparkles className="w-3 h-3 text-amber-300 flex-shrink-0" />
+            <Sparkles className="w-3 h-3 text-sky-300 flex-shrink-0" />
             <span>
               SIP Karanghaur • {isSupabaseConnected ? 'Supabase Live' : 'Mode Lokal'}
               {lastSyncedAt ? ` (${lastSyncedAt})` : ''}
@@ -167,7 +167,7 @@ export const Header: React.FC = () => {
           </span>
           <button
             onClick={() => setShowRoleModal(true)}
-            className="text-amber-200 hover:text-white font-bold underline text-[10px] flex-shrink-0"
+            className="text-sky-200 hover:text-white font-bold underline text-[10px] flex-shrink-0"
           >
             Ubah Peran
           </button>
@@ -198,7 +198,7 @@ export const Header: React.FC = () => {
             <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-2">
               {allProfiles.map((p) => {
                 const isSelected = currentProfile?.id === p.id;
-                let badgeColor = 'bg-orange-100 text-orange-800 border-orange-200';
+                let badgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
                 if (p.role === 'admin') badgeColor = 'bg-purple-100 text-purple-800 border-purple-200';
                 if (p.role === 'kadus') badgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
                 if (p.role === 'rw') badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-200';
@@ -212,8 +212,8 @@ export const Header: React.FC = () => {
                     }}
                     className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 ${
                       isSelected
-                        ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-400/20'
-                        : 'border-slate-200 hover:border-orange-300 hover:bg-slate-50'
+                        ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-400/20'
+                        : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
                     }`}
                   >
                     <div className="min-w-0 flex-1">
@@ -234,7 +234,7 @@ export const Header: React.FC = () => {
                     </div>
 
                     {isSelected ? (
-                      <CheckCircle2 className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
                     ) : (
                       <span className="text-[11px] text-slate-400 flex-shrink-0">Pilih</span>
                     )}

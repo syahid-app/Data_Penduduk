@@ -62,7 +62,7 @@ export default function LoginPage() {
     <div className="fixed inset-0 h-[100dvh] w-full bg-slate-900 flex items-center justify-center p-0 sm:p-4 overflow-hidden">
       <div className="w-full max-w-md bg-slate-50 h-full sm:h-auto sm:max-h-[92dvh] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200/60">
         {/* Top Hero Banner - Fixed at Top */}
-        <div className="bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 px-5 py-4 text-white text-center relative overflow-hidden flex-shrink-0">
+        <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 px-5 py-4 text-white text-center relative overflow-hidden flex-shrink-0">
           <div className="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-amber-400/20 rounded-full blur-lg pointer-events-none" />
 
@@ -71,7 +71,7 @@ export default function LoginPage() {
               <Building2 className="w-7 h-7 text-amber-200" />
             </div>
 
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-semibold text-orange-100 border border-white/25 mb-1">
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-semibold text-blue-100 border border-white/25 mb-1">
               <Sparkles className="w-3 h-3 text-amber-300" />
               Sistem Kependudukan Berbasis Wilayah (RBAC)
             </div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
             <h1 className="text-lg font-extrabold tracking-tight text-white drop-shadow-sm">
               DESA KARANGHAUR
             </h1>
-            <p className="text-[11px] text-orange-100 mt-0.5">
+            <p className="text-[11px] text-blue-100 mt-0.5">
               Kecamatan Pebayuran, Kabupaten Bekasi • {citizens.length} Jiwa / {families.length} KK Aktif
             </p>
           </div>
@@ -92,7 +92,7 @@ export default function LoginPage() {
               onClick={() => setActiveTab('demo')}
               className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
                 activeTab === 'demo'
-                  ? 'bg-white text-orange-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -102,7 +102,7 @@ export default function LoginPage() {
               onClick={() => setActiveTab('credentials')}
               className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
                 activeTab === 'credentials'
-                  ? 'bg-white text-orange-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -123,14 +123,14 @@ export default function LoginPage() {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between text-xs text-slate-500 px-1">
                 <span className="font-semibold text-slate-700">Pilih Peran Pengguna ({allProfiles.length}):</span>
-                <span className="text-[11px] text-orange-600 font-medium">Otomatis Masuk</span>
+                <span className="text-[11px] text-blue-600 font-medium">Otomatis Masuk</span>
               </div>
 
               <div className="space-y-1.5">
                 {allProfiles.map((profile) => {
-                  let badge = 'bg-orange-100 text-orange-800 border-orange-200';
+                  let badge = 'bg-blue-100 text-blue-800 border-blue-200';
                   let scope = '';
-                  let icon = <UserCheck className="w-4 h-4 text-orange-600" />;
+                  let icon = <UserCheck className="w-4 h-4 text-blue-600" />;
 
                   if (profile.role === 'admin') {
                     badge = 'bg-purple-100 text-purple-800 border-purple-200';
@@ -151,16 +151,16 @@ export default function LoginPage() {
                       key={profile.id}
                       onClick={() => handleSelectDemo(profile.id)}
                       disabled={loading}
-                      className="w-full text-left p-2.5 rounded-xl bg-white border border-slate-200 hover:border-orange-500 hover:bg-orange-50/50 active:scale-[0.99] transition-all group focus:outline-none"
+                      className="w-full text-left p-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 active:scale-[0.99] transition-all group focus:outline-none"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-orange-100 flex items-center justify-center transition-colors flex-shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors flex-shrink-0">
                             {icon}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center space-x-1.5">
-                              <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600 truncate">
+                              <span className="text-xs font-bold text-slate-900 group-hover:text-blue-600 truncate">
                                 {profile.full_name}
                               </span>
                               <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${badge}`}>
@@ -174,7 +174,7 @@ export default function LoginPage() {
                           </div>
                         </div>
 
-                        <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-orange-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                        <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
                       </div>
                     </button>
                   );
@@ -205,7 +205,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@karanghaur.desa.id"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
@@ -222,7 +222,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
@@ -241,7 +241,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5"
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center space-x-1.5"
               >
                 <span>{loading ? 'Memverifikasi...' : 'Masuk Aplikasi'}</span>
                 <ArrowRight className="w-4 h-4" />

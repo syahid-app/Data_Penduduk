@@ -20,8 +20,11 @@ export default function MainLayout({
   const [isAddKKModalOpen, setIsAddKKModalOpen] = useState(false);
 
   const isAdmin = currentProfile?.role === 'admin';
-  // Hide global FAB on /warga and /data so it never blocks table pagination or action buttons
-  const hideFab = pathname.startsWith('/warga') || pathname.startsWith('/data');
+  // Hide global FAB on /warga, /kk, and /data so it never blocks table pagination or action buttons
+  const hideFab =
+    pathname.startsWith('/warga') ||
+    pathname.startsWith('/kk') ||
+    pathname.startsWith('/data');
 
   return (
     <div className="fixed inset-0 h-[100dvh] w-full bg-slate-900 flex justify-center overflow-hidden">
@@ -44,7 +47,7 @@ export default function MainLayout({
               {isAdmin ? (
                 <button
                   onClick={() => setIsAddKKModalOpen(true)}
-                  className="p-3 rounded-full bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg hover:shadow-orange-500/40 active:scale-90 transition-all flex items-center justify-center group"
+                  className="p-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/40 active:scale-90 transition-all flex items-center justify-center group"
                   title="Tambah Kartu Keluarga Baru"
                 >
                   <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
@@ -55,7 +58,7 @@ export default function MainLayout({
               ) : (
                 <button
                   onClick={() => setIsNoteModalOpen(true)}
-                  className="p-3 rounded-full bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg hover:shadow-orange-500/40 active:scale-90 transition-all flex items-center justify-center group"
+                  className="p-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/40 active:scale-90 transition-all flex items-center justify-center group"
                   title="Kirim Catatan Data Wilayah"
                 >
                   <MessageSquarePlus className="w-5 h-5 group-hover:scale-110 transition-transform" />
