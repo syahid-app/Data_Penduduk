@@ -1,12 +1,17 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/lib/context';
-import { KKCard } from '@/components/KKCard';
 import { NoteModal } from '@/components/NoteModal';
 import { AddKKModal } from '@/components/AddKKModal';
 import { Family } from '@/lib/types';
+import {
+  getFamilyHouseNumber,
+  calculateCitizenAge,
+  getCitizenMaritalStatus,
+} from '@/lib/mockData';
 import {
   Search,
   PlusCircle,
@@ -15,17 +20,51 @@ import {
   QrCode,
   HeartHandshake,
   MapPin,
+  Eye,
+  MessageSquarePlus,
+  Edit3,
+  Trash2,
+  X,
+  Users,
+  Zap,
+  Droplet,
+  CheckCircle2,
+  Copy,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  ExternalLink,
 } from 'lucide-react';
 
 function KKListContent() {
   const searchParams = useSearchParams();
-  const { visibleFamilies, currentProfile } = useApp();
+  const {
+    visibleFamilies,
+    getCitizensByFamilyId,
+    currentProfile,
+    deleteFamily,
+  } = useApp();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'barcode' | 'non-barcode' | 'update' | 'bansos'>('all');
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'barcode' | 'non-barcode' | 'update' | 'bansos'
+  >('all');
   const [rtFilter, setRtFilter] = useState<string>('all');
-  const [selectedFamilyForNote, setSelectedFamilyForNote] = useState<Family | null>(null);
+
+  // Pagination state
+  const [pageSize, setPageSize] = useState<number>(15);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Modals state
+  const [selectedFamilyForDetail, setSelectedFamilyForDetail] =
+    useState<Family | null>(null);
+  const [selectedFamilyForNote, setSelectedFamilyForNote] =
+    useState<Family | null>(null);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isAddKKModalOpen, setIsAddKKModalOpen] = useState(false);
+  const [editingFamily, setEditingFamily] = useState<Family | null>(null);
+  const [copiedNoKK, setCopiedNoKK] = useState<string | null>(null);
 
   const isAdmin = currentProfile?.role === 'admin';
 
@@ -39,8 +78,17 @@ function KKListContent() {
       filterParam === 'update'
     ) {
       setActiveFilter(filterParam);
+      setCurrentPage(1);
     }
   }, [searchParams]);
+
+  // Keep detail modal synced if family data is edited
+  const activeDetailFamily = useMemo(() => {
+    if (!selectedFamilyForDetail) return null;
+    return (
+      visibleFamilies.find((f) => f.id === selectedFamilyForDetail.id) || null
+    );
+  }, [selectedFamilyForDetail, visibleFamilies]);
 
   // Available RTs within visible scope
   const availableRts = useMemo(() => {
@@ -52,9 +100,9 @@ function KKListContent() {
   // Filtered families based on search, status filter, and RT filter
   const filteredFamilies = useMemo(() => {
     return visibleFamilies.filter((fam) => {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
       const matchSearch =
-        !searchQuery ||
+        !q ||
         fam.no_kk.toLowerCase().includes(q) ||
         fam.kepala_keluarga.toLowerCase().includes(q) ||
         fam.alamat.toLowerCase().includes(q);
@@ -64,7 +112,8 @@ function KKListContent() {
       if (activeFilter === 'barcode' && !fam.status_barcode) return false;
       if (activeFilter === 'non-barcode' && fam.status_barcode) return false;
       if (activeFilter === 'update' && fam.status_update) return false;
-      if (activeFilter === 'bansos' && fam.bantuan_sosial === 'none') return false;
+      if (activeFilter === 'bansos' && fam.bantuan_sosial === 'none')
+        return false;
 
       if (rtFilter !== 'all' && fam.rt !== rtFilter) return false;
 
@@ -72,69 +121,115 @@ function KKListContent() {
     });
   }, [visibleFamilies, searchQuery, activeFilter, rtFilter]);
 
+  // Pagination calculation
+  const totalItems = filteredFamilies.length;
+  const totalPages = pageSize === 0 ? 1 : Math.ceil(totalItems / pageSize);
+  const safePage = Math.min(Math.max(currentPage, 1), totalPages || 1);
+
+  const paginatedFamilies = useMemo(() => {
+    if (pageSize === 0) return filteredFamilies;
+    const startIndex = (safePage - 1) * pageSize;
+    return filteredFamilies.slice(startIndex, startIndex + pageSize);
+  }, [filteredFamilies, safePage, pageSize]);
+
+  const isAnyFilterActive =
+    searchQuery !== '' || activeFilter !== 'all' || rtFilter !== 'all';
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setActiveFilter('all');
+    setRtFilter('all');
+    setCurrentPage(1);
+  };
+
+  const handleCopyNoKK = (noKK: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(noKK);
+      setCopiedNoKK(noKK);
+      setTimeout(() => setCopiedNoKK(null), 1800);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* ===================================================================== */}
       {/* FIXED TOP HEAD BAR (Judul, Pencarian, & Filter - Tidak ikut scroll)   */}
       {/* ===================================================================== */}
-      <div className="flex-shrink-0 px-3.5 sm:px-5 pt-2.5 pb-2.5 bg-slate-50 border-b border-slate-200/80 z-10 space-y-2">
+      <div className="flex-shrink-0 px-3 sm:px-5 pt-2.5 pb-2 bg-slate-50 border-b border-slate-200/80 z-10 space-y-2">
         {/* Title & Add KK */}
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
-              <FileSpreadsheet className="w-4 h-4 text-orange-600" />
-              <span>Data Kartu Keluarga ({filteredFamilies.length}/{visibleFamilies.length})</span>
+        <div className="flex items-center justify-between flex-wrap gap-1.5">
+          <div className="flex items-center flex-wrap gap-1.5 min-w-0">
+            <FileSpreadsheet className="w-4 h-4 text-orange-600 flex-shrink-0" />
+            <h1 className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
+              Tabel Data KK
             </h1>
-            <p className="text-[10px] text-slate-500">
-              Wilayah:{' '}
-              <strong className="text-slate-800">
-                {currentProfile?.role === 'admin'
-                  ? 'Seluruh Desa Karanghaur'
-                  : currentProfile?.role === 'kadus'
-                  ? currentProfile.assigned_dusun
-                  : currentProfile?.role === 'rw'
-                  ? `RW ${currentProfile.assigned_rw}`
-                  : `RT ${currentProfile?.assigned_rt} / RW ${currentProfile?.assigned_rw}`}
-              </strong>
-            </p>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">
+              {filteredFamilies.length}/{visibleFamilies.length} KK
+            </span>
           </div>
 
           {isAdmin && (
             <button
-              onClick={() => setIsAddKKModalOpen(true)}
-              className="inline-flex items-center text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1.5 rounded-xl shadow-sm transition-all active:scale-95 flex-shrink-0"
+              onClick={() => {
+                setEditingFamily(null);
+                setIsAddKKModalOpen(true);
+              }}
+              className="inline-flex items-center text-[11px] font-bold bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1 rounded-lg shadow-sm transition-all active:scale-95 flex-shrink-0"
             >
               <PlusCircle className="w-3.5 h-3.5 mr-1" />
-              Tambah KK
+              <span>+ Tambah KK</span>
             </button>
           )}
         </div>
 
-        {/* Search Input Box */}
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari No. KK, Nama Kepala Keluarga, Alamat..."
-            className="w-full pl-8 pr-8 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none shadow-sm"
-          />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
-          {searchQuery && (
+        {/* Search Input Box + Reset */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Cari Nama Kepala Keluarga, No. KK, Alamat..."
+              className="w-full pl-7 pr-6 py-1.5 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-900 focus:ring-1 focus:ring-orange-500 outline-none"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                }}
+                className="text-slate-400 hover:text-slate-600 absolute right-2 top-1.5 text-xs font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {isAnyFilterActive && (
             <button
-              onClick={() => setSearchQuery('')}
-              className="w-4 h-4 text-slate-400 hover:text-slate-600 absolute right-2.5 top-2 text-xs font-bold"
+              onClick={handleResetFilters}
+              className="px-2.5 py-1.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 font-bold flex items-center gap-1 text-[11px] flex-shrink-0"
+              title="Reset Semua Filter"
             >
-              ✕
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset</span>
             </button>
           )}
         </div>
 
         {/* Filter Pills + RT Sub-filter */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
+        <div className="flex items-center flex-wrap gap-1.5">
           <button
-            onClick={() => setActiveFilter('all')}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+            onClick={() => {
+              setActiveFilter('all');
+              setCurrentPage(1);
+            }}
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
               activeFilter === 'all'
                 ? 'bg-orange-600 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-orange-300'
@@ -144,32 +239,41 @@ function KKListContent() {
           </button>
 
           <button
-            onClick={() => setActiveFilter('barcode')}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+            onClick={() => {
+              setActiveFilter('barcode');
+              setCurrentPage(1);
+            }}
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all inline-flex items-center gap-1 ${
               activeFilter === 'barcode'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-emerald-300'
             }`}
           >
             <QrCode className="w-3 h-3" />
-            Barcode
+            <span>Barcode</span>
           </button>
 
           <button
-            onClick={() => setActiveFilter('non-barcode')}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+            onClick={() => {
+              setActiveFilter('non-barcode');
+              setCurrentPage(1);
+            }}
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all inline-flex items-center gap-1 ${
               activeFilter === 'non-barcode'
                 ? 'bg-rose-600 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-rose-300'
             }`}
           >
             <AlertCircle className="w-3 h-3" />
-            Non-Barcode
+            <span>Non-Barcode</span>
           </button>
 
           <button
-            onClick={() => setActiveFilter('update')}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+            onClick={() => {
+              setActiveFilter('update');
+              setCurrentPage(1);
+            }}
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
               activeFilter === 'update'
                 ? 'bg-amber-600 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-amber-300'
@@ -179,24 +283,30 @@ function KKListContent() {
           </button>
 
           <button
-            onClick={() => setActiveFilter('bansos')}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+            onClick={() => {
+              setActiveFilter('bansos');
+              setCurrentPage(1);
+            }}
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all inline-flex items-center gap-1 ${
               activeFilter === 'bansos'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
             }`}
           >
             <HeartHandshake className="w-3 h-3" />
-            KPM Bansos
+            <span>KPM Bansos</span>
           </button>
 
           {availableRts.length > 1 && (
-            <div className="flex items-center space-x-1 pl-1 border-l border-slate-200">
+            <div className="inline-flex items-center gap-1">
               <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
               <select
                 value={rtFilter}
-                onChange={(e) => setRtFilter(e.target.value)}
-                className="py-1 px-2 rounded-full text-[11px] font-bold bg-white border border-slate-200 text-slate-700 outline-none"
+                onChange={(e) => {
+                  setRtFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="py-1 px-2 rounded-lg text-[10px] font-bold bg-white border border-slate-200 text-slate-700 outline-none"
               >
                 <option value="all">Semua RT</option>
                 {availableRts.map((rt) => (
@@ -211,42 +321,448 @@ function KKListContent() {
       </div>
 
       {/* ===================================================================== */}
-      {/* SCROLLABLE KK LIST AREA (Hanya daftar KK yang ikut scrolling)         */}
+      {/* FULL-HEIGHT SCROLLABLE TABLE AREA (Hanya Nama Kepala Keluarga & Aksi) */}
       {/* ===================================================================== */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3.5 sm:px-5 py-3 pb-20 space-y-2.5">
-        {filteredFamilies.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-sm">
-            <FileSpreadsheet className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <h3 className="text-sm font-bold text-slate-700">Tidak ada KK yang cocok</h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-              Cobalah ubah kata kunci pencarian atau sesuaikan filter wilayah di atas.
-            </p>
+      <div className="flex-1 min-h-0 px-3.5 sm:px-5 py-2.5 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-auto overscroll-contain">
+            <table className="w-full text-left border-collapse text-[11px]">
+              <thead className="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider shadow-[0_1px_0_rgba(226,232,240,1)]">
+                <tr>
+                  <th className="py-2 px-2.5 text-center w-9 whitespace-nowrap">
+                    No
+                  </th>
+                  <th className="py-2 px-2.5">Nama Kepala Keluarga</th>
+                  <th className="py-2 px-2.5 text-right whitespace-nowrap w-24">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedFamilies.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-12 px-4 text-center">
+                      <FileSpreadsheet className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
+                      <p className="text-xs font-bold text-slate-700">
+                        Data KK tidak ditemukan
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Tidak ada Kartu Keluarga yang cocok dengan pencarian
+                        atau filter.
+                      </p>
+                      {isAnyFilterActive && (
+                        <button
+                          onClick={handleResetFilters}
+                          className="mt-2 px-3 py-1 bg-orange-600 text-white rounded-lg text-[11px] font-semibold hover:bg-orange-700"
+                        >
+                          Reset Filter
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedFamilies.map((family, idx) => {
+                    const rowNumber =
+                      pageSize === 0
+                        ? idx + 1
+                        : (safePage - 1) * pageSize + idx + 1;
+
+                    return (
+                      <tr
+                        key={family.id}
+                        onClick={() => setSelectedFamilyForDetail(family)}
+                        className="even:bg-slate-50/50 hover:bg-orange-50/60 cursor-pointer transition-colors group"
+                      >
+                        {/* 1. No */}
+                        <td className="py-2 px-2.5 text-center font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                          {rowNumber}
+                        </td>
+
+                        {/* 2. Nama Kepala Keluarga */}
+                        <td className="py-2 px-2.5 font-extrabold text-slate-900 uppercase break-words">
+                          {family.kepala_keluarga}
+                        </td>
+
+                        {/* 3. Tombol Detail */}
+                        <td
+                          className="py-1.5 px-2.5 text-right whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => setSelectedFamilyForDetail(family)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-50 hover:bg-orange-600 text-orange-700 hover:text-white border border-orange-200 transition-colors shadow-sm"
+                            title="Lihat Detail Lengkap KK"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Detail</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          filteredFamilies.map((family) => (
-            <KKCard
-              key={family.id}
-              family={family}
-              onOpenNoteModal={(fam) => {
-                setSelectedFamilyForNote(fam);
-                setIsNoteModalOpen(true);
-              }}
-            />
-          ))
-        )}
+
+          {/* ================================================================= */}
+          {/* FIXED TABLE FOOTER (Pagination & Row Size)                        */}
+          {/* ================================================================= */}
+          <div className="flex-shrink-0 px-3 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-600">
+            <div className="flex items-center gap-2">
+              <span>
+                Menampilkan{' '}
+                <strong className="text-slate-900">
+                  {totalItems === 0
+                    ? 0
+                    : pageSize === 0
+                    ? `1 - ${totalItems}`
+                    : `${(safePage - 1) * pageSize + 1} - ${Math.min(
+                        safePage * pageSize,
+                        totalItems
+                      )}`}
+                </strong>{' '}
+                dari <strong className="text-slate-900">{totalItems}</strong>
+              </span>
+
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="py-0.5 px-1.5 text-[10px] bg-white border border-slate-200 rounded font-semibold text-slate-700 outline-none"
+                title="Baris per halaman"
+              >
+                <option value={15}>15 baris</option>
+                <option value={25}>25 baris</option>
+                <option value={50}>50 baris</option>
+                <option value={0}>Semua</option>
+              </select>
+            </div>
+
+            {pageSize !== 0 && totalPages > 1 && (
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={safePage === 1}
+                  className="p-1 rounded border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                  title="Halaman Sebelumnya"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+
+                <span className="px-2 font-bold text-[11px] text-slate-800">
+                  {safePage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
+                  disabled={safePage === totalPages}
+                  className="p-1 rounded border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                  title="Halaman Selanjutnya"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Modals */}
+      {/* ===================================================================== */}
+      {/* MODAL DETAIL LENGKAP KK (Muncul saat klik baris / tombol Detail)      */}
+      {/* ===================================================================== */}
+      {activeDetailFamily && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3.5 animate-fade-in">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[88dvh] flex flex-col overflow-hidden animate-slide-up">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-4 text-white flex items-start justify-between gap-2 flex-shrink-0">
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-100 block">
+                  Detail Kartu Keluarga
+                </span>
+                <h3 className="font-extrabold text-sm sm:text-base uppercase break-words leading-snug mt-0.5">
+                  {activeDetailFamily.kepala_keluarga}
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="font-mono text-xs font-bold text-white/95">
+                    NO. KK: {activeDetailFamily.no_kk}
+                  </span>
+                  <button
+                    onClick={(e) => handleCopyNoKK(activeDetailFamily.no_kk, e)}
+                    className="p-1 rounded bg-white/20 hover:bg-white/30 text-white transition-colors"
+                    title="Salin Nomor KK"
+                  >
+                    {copiedNoKK === activeDetailFamily.no_kk ? (
+                      <Check className="w-3 h-3 text-emerald-200" />
+                    ) : (
+                      <Copy className="w-3 h-3" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedFamilyForDetail(null)}
+                className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center font-bold flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-3.5 sm:p-4 flex-1 min-h-0 overflow-y-auto space-y-3 text-xs">
+              {/* Status Badges */}
+              <div className="flex items-center flex-wrap gap-1.5">
+                {activeDetailFamily.status_barcode ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <QrCode className="w-3 h-3 mr-1" />
+                    Barcode Resmi
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    Belum Barcode
+                  </span>
+                )}
+
+                {activeDetailFamily.status_update ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Data Terverifikasi
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                    Perlu Update
+                  </span>
+                )}
+
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                  <Users className="w-3 h-3 mr-1" />
+                  {getCitizensByFamilyId(activeDetailFamily.id).length} Jiwa
+                </span>
+              </div>
+
+              {/* Wilayah & Domisili */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                  Wilayah & Alamat Lengkap
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                  <div>
+                    <span className="text-slate-400 block">RT / RW:</span>
+                    <span className="font-bold text-slate-800">
+                      RT {activeDetailFamily.rt} / RW {activeDetailFamily.rw}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Dusun & No. Rumah:</span>
+                    <span className="font-bold text-slate-800">
+                      {activeDetailFamily.dusun} • Rumah No.{' '}
+                      {getFamilyHouseNumber(activeDetailFamily)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-[11px] pt-1 border-t border-slate-200/70">
+                  <span className="text-slate-400 block">Alamat Domisili:</span>
+                  <span className="font-semibold text-slate-800 break-words">
+                    {activeDetailFamily.alamat}
+                  </span>
+                </div>
+              </div>
+
+              {/* Fasilitas Rumah & Bantuan Sosial */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <HeartHandshake className="w-3.5 h-3.5 text-emerald-600" />
+                  Fasilitas Rumah & Bantuan Sosial
+                </h4>
+                <div className="grid grid-cols-3 gap-2 text-[11px] pt-1">
+                  <div className="bg-white p-2 rounded-lg border border-slate-200/80">
+                    <span className="text-[10px] text-slate-400 block">
+                      Penerangan
+                    </span>
+                    <span className="font-bold text-slate-800 inline-flex items-center gap-1 mt-0.5 capitalize">
+                      <Zap className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                      {activeDetailFamily.penerangan}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-slate-200/80">
+                    <span className="text-[10px] text-slate-400 block">
+                      Fasilitas MCK
+                    </span>
+                    <span className="font-bold text-slate-800 inline-flex items-center gap-1 mt-0.5 capitalize">
+                      <Droplet className="w-3 h-3 text-sky-500 flex-shrink-0" />
+                      {activeDetailFamily.fasilitas_mck}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-slate-200/80">
+                    <span className="text-[10px] text-slate-400 block">
+                      Program Bansos
+                    </span>
+                    <span className="font-extrabold text-emerald-700 inline-flex items-center gap-1 mt-0.5 uppercase">
+                      {activeDetailFamily.bantuan_sosial === 'none'
+                        ? 'Non-Bansos'
+                        : activeDetailFamily.bantuan_sosial}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Daftar Anggota Keluarga */}
+              {(() => {
+                const members = getCitizensByFamilyId(activeDetailFamily.id);
+                return (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-orange-600" />
+                        Anggota Keluarga ({members.length} Jiwa)
+                      </h4>
+                      <Link
+                        href={`/kk/${activeDetailFamily.id}`}
+                        className="text-[10px] font-bold text-orange-600 hover:underline inline-flex items-center gap-0.5"
+                      >
+                        <span>Kelola Anggota</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </Link>
+                    </div>
+
+                    {members.length === 0 ? (
+                      <p className="text-[11px] text-slate-400 italic py-2">
+                        Belum ada anggota keluarga terdaftar.
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {members.map((m, i) => (
+                          <div
+                            key={m.id}
+                            className="bg-white p-2.5 rounded-lg border border-slate-200/90 flex items-start justify-between gap-2"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center flex-wrap gap-1">
+                                <span className="text-[10px] font-mono text-slate-400 font-bold">
+                                  {i + 1}.
+                                </span>
+                                <span className="text-xs font-extrabold text-slate-900 uppercase break-words">
+                                  {m.nama_lengkap}
+                                </span>
+                                <span
+                                  className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border ${
+                                    m.jenis_kelamin === 'L'
+                                      ? 'bg-sky-50 text-sky-700 border-sky-200'
+                                      : 'bg-rose-50 text-rose-700 border-rose-200'
+                                  }`}
+                                >
+                                  {m.jenis_kelamin}
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+                                NIK: {m.nik}
+                              </p>
+                              <p className="text-[10px] text-slate-600 mt-0.5 break-words">
+                                {calculateCitizenAge(m.tanggal_lahir)} Thn •{' '}
+                                {getCitizenMaritalStatus(m)} • {m.pekerjaan} •
+                                BPJS: {m.bpjs_kesehatan.toUpperCase()}
+                              </p>
+                            </div>
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex-shrink-0">
+                              {m.hubungan_keluarga}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
+              <Link
+                href={`/kk/${activeDetailFamily.id}`}
+                className="inline-flex items-center text-[11px] font-bold text-slate-700 hover:text-slate-900 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-sm"
+              >
+                <ExternalLink className="w-3.5 h-3.5 mr-1 text-orange-600" />
+                Halaman KK & Anggota
+              </Link>
+
+              <div className="flex items-center flex-wrap gap-1.5">
+                <button
+                  onClick={() => {
+                    const fam = activeDetailFamily;
+                    setSelectedFamilyForDetail(null);
+                    setSelectedFamilyForNote(fam);
+                    setIsNoteModalOpen(true);
+                  }}
+                  className="inline-flex items-center text-[11px] font-bold bg-orange-50 hover:bg-orange-600 text-orange-700 hover:text-white border border-orange-200 px-2.5 py-1.5 rounded-xl transition-colors"
+                >
+                  <MessageSquarePlus className="w-3.5 h-3.5 mr-1" />
+                  Catat KK
+                </button>
+
+                {isAdmin && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const fam = activeDetailFamily;
+                        setEditingFamily(fam);
+                        setIsAddKKModalOpen(true);
+                      }}
+                      className="inline-flex items-center text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl transition-colors"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 mr-1" />
+                      Edit KK
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `Hapus Kartu Keluarga ${activeDetailFamily.kepala_keluarga} (No KK: ${activeDetailFamily.no_kk}) beserta seluruh anggotanya?`
+                          )
+                        ) {
+                          const idToDelete = activeDetailFamily.id;
+                          setSelectedFamilyForDetail(null);
+                          await deleteFamily(idToDelete);
+                        }
+                      }}
+                      className="inline-flex items-center text-[11px] font-bold bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 px-2.5 py-1.5 rounded-xl transition-colors"
+                      title="Hapus KK"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Note Modal */}
       <NoteModal
         isOpen={isNoteModalOpen}
-        onClose={() => setIsNoteModalOpen(false)}
+        onClose={() => {
+          setIsNoteModalOpen(false);
+          setSelectedFamilyForNote(null);
+        }}
         initialFamily={selectedFamilyForNote}
       />
 
+      {/* Add / Edit KK Modal (Admin) */}
       {isAdmin && (
         <AddKKModal
           isOpen={isAddKKModalOpen}
-          onClose={() => setIsAddKKModalOpen(false)}
+          onClose={() => {
+            setIsAddKKModalOpen(false);
+            setEditingFamily(null);
+          }}
+          editFamily={editingFamily}
         />
       )}
     </div>
