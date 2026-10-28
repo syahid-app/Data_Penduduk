@@ -1,6 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  ReactNode,
+  useCallback,
+} from 'react';
 import {
   Profile,
   Family,
@@ -8,9 +16,11 @@ import {
   Note,
   NoteStatus,
   VillageStats,
+  VillageConfig,
 } from './types';
 import {
   DEMO_PROFILES,
+  DEFAULT_VILLAGE_CONFIG,
   INITIAL_FAMILIES,
   INITIAL_CITIZENS,
   INITIAL_NOTES,
@@ -22,14 +32,75 @@ import {
 import { supabase, isSupabaseConfigured } from './supabase';
 
 // =========================================================================
+// HELPERS FOR ENCODING/DECODING PIN & VILLAGE CONFIG IN SUPABASE PROFILES
+// =========================================================================
+const DEFAULT_PIN_MAP = new Map(DEMO_PROFILES.map((p) => [p.id, p.pin || '123456']));
+
+export function getDefaultPinForProfile(profile: Partial<Profile>): string {
+  if (profile.pin && profile.pin.trim() !== '') return profile.pin.trim();
+  if (profile.id && DEFAULT_PIN_MAP.has(profile.id)) {
+    return DEFAULT_PIN_MAP.get(profile.id)!;
+  }
+  return '123456';
+}
+
+export function hydrateProfilesAndVillage(
+  rawProfiles: Profile[],
+  fallbackVillage: VillageConfig
+): { profiles: Profile[]; village: VillageConfig } {
+  let detectedVillage: VillageConfig = { ...fallbackVillage };
+
+  const profiles = rawProfiles.map((p) => {
+    let pin = p.pin || getDefaultPinForProfile(p);
+    if (p.avatar_url && typeof p.avatar_url === 'string' && p.avatar_url.trim().startsWith('{')) {
+      try {
+        const meta = JSON.parse(p.avatar_url);
+        if (meta.pin) pin = String(meta.pin);
+        if (meta.village && typeof meta.village === 'object') {
+          detectedVillage = {
+            ...DEFAULT_VILLAGE_CONFIG,
+            ...meta.village,
+          };
+        }
+      } catch {
+        // Ignore invalid JSON in avatar_url
+      }
+    }
+    return {
+      ...p,
+      pin,
+    };
+  });
+
+  return { profiles, village: detectedVillage };
+}
+
+// =========================================================================
 // DATA SANITIZERS (Ensures strictly valid columns for Supabase PostgreSQL)
 // =========================================================================
-export const sanitizeProfile = (p: Partial<Profile>): any => {
+export const sanitizeProfile = (
+  p: Partial<Profile>,
+  villageConfig?: VillageConfig
+): any => {
+  const pin = getDefaultPinForProfile(p);
+  const metaPayload: any = { pin };
+  if (p.role === 'admin' && villageConfig) {
+    metaPayload.village = villageConfig;
+  }
+
   const allowed = [
-    'id', 'full_name', 'role', 'assigned_dusun',
-    'assigned_rw', 'assigned_rt', 'phone', 'avatar_url', 'created_at'
+    'id',
+    'full_name',
+    'role',
+    'assigned_dusun',
+    'assigned_rw',
+    'assigned_rt',
+    'phone',
+    'created_at',
   ];
-  const clean: any = {};
+  const clean: any = {
+    avatar_url: JSON.stringify(metaPayload),
+  };
   for (const key of allowed) {
     if ((p as any)[key] !== undefined) {
       clean[key] = (p as any)[key];
@@ -40,9 +111,20 @@ export const sanitizeProfile = (p: Partial<Profile>): any => {
 
 export const sanitizeFamily = (f: Partial<Family>): any => {
   const allowed = [
-    'id', 'no_kk', 'kepala_keluarga', 'alamat', 'no_rumah',
-    'dusun', 'rw', 'rt', 'status_barcode', 'status_update',
-    'penerangan', 'fasilitas_mck', 'bantuan_sosial', 'created_at'
+    'id',
+    'no_kk',
+    'kepala_keluarga',
+    'alamat',
+    'no_rumah',
+    'dusun',
+    'rw',
+    'rt',
+    'status_barcode',
+    'status_update',
+    'penerangan',
+    'fasilitas_mck',
+    'bantuan_sosial',
+    'created_at',
   ];
   const clean: any = {};
   for (const key of allowed) {
@@ -55,11 +137,24 @@ export const sanitizeFamily = (f: Partial<Family>): any => {
 
 export const sanitizeCitizen = (c: Partial<Citizen>): any => {
   const allowed = [
-    'id', 'family_id', 'nik', 'nama_lengkap', 'hubungan_keluarga',
-    'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama',
-    'pendidikan_terakhir', 'pekerjaan', 'status_perkawinan',
-    'bpjs_kesehatan', 'disabilitas', 'status_tki', 'akta_kelahiran',
-    'akta_nikah', 'created_at'
+    'id',
+    'family_id',
+    'nik',
+    'nama_lengkap',
+    'hubungan_keluarga',
+    'jenis_kelamin',
+    'tempat_lahir',
+    'tanggal_lahir',
+    'agama',
+    'pendidikan_terakhir',
+    'pekerjaan',
+    'status_perkawinan',
+    'bpjs_kesehatan',
+    'disabilitas',
+    'status_tki',
+    'akta_kelahiran',
+    'akta_nikah',
+    'created_at',
   ];
   const clean: any = {};
   for (const key of allowed) {
@@ -72,9 +167,19 @@ export const sanitizeCitizen = (c: Partial<Citizen>): any => {
 
 export const sanitizeNote = (n: Partial<Note>): any => {
   const allowed = [
-    'id', 'family_id', 'citizen_id', 'author_id', 'family_no_kk',
-    'citizen_name', 'citizen_nik', 'dusun', 'rw', 'rt',
-    'message', 'status', 'created_at'
+    'id',
+    'family_id',
+    'citizen_id',
+    'author_id',
+    'family_no_kk',
+    'citizen_name',
+    'citizen_nik',
+    'dusun',
+    'rw',
+    'rt',
+    'message',
+    'status',
+    'created_at',
   ];
   const clean: any = {};
   for (const key of allowed) {
@@ -88,8 +193,18 @@ export const sanitizeNote = (n: Partial<Note>): any => {
 interface AppContextType {
   currentProfile: Profile | null;
   allProfiles: Profile[];
-  switchProfile: (profileId: string) => void;
+  isAuthenticated: boolean;
+  loginWithPin: (profileId: string, pinInput: string) => { success: boolean; error?: string };
+  switchProfile: (profileId: string, pinInput?: string) => { success: boolean; error?: string };
   logout: () => void;
+  // Village Identity & Config
+  villageConfig: VillageConfig;
+  updateVillageConfig: (partial: Partial<VillageConfig>) => Promise<{ success: boolean; error?: string }>;
+  // Account & PIN Management (Admin)
+  addProfile: (profileData: Omit<Profile, 'id' | 'created_at'>) => Promise<{ success: boolean; data?: Profile; error?: string }>;
+  updateProfile: (id: string, partial: Partial<Profile>) => Promise<{ success: boolean; error?: string }>;
+  deleteProfile: (id: string) => Promise<{ success: boolean; error?: string }>;
+  // Data
   families: Family[];
   citizens: Citizen[];
   notes: Note[];
@@ -131,7 +246,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
   PROFILE: 'karanghaur_profile_id_v3',
+  AUTH_SESSION: 'karanghaur_auth_pin_session_v4',
   PROFILES_LIST: 'karanghaur_profiles_v3',
+  VILLAGE_CONFIG: 'karanghaur_village_config_v3',
   FAMILIES: 'karanghaur_families_v3',
   CITIZENS: 'karanghaur_citizens_v3',
   NOTES: 'karanghaur_notes_v3',
@@ -148,7 +265,9 @@ const LEGACY_PROFILE_MAP: Record<string, string> = {
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [allProfiles, setAllProfiles] = useState<Profile[]>(DEMO_PROFILES);
-  const [currentProfile, setCurrentProfile] = useState<Profile | null>(DEMO_PROFILES[0]);
+  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [villageConfig, setVillageConfig] = useState<VillageConfig>(DEFAULT_VILLAGE_CONFIG);
   const [families, setFamilies] = useState<Family[]>(INITIAL_FAMILIES);
   const [citizens, setCitizens] = useState<Citizen[]>(INITIAL_CITIZENS);
   const [notes, setNotes] = useState<Note[]>(INITIAL_NOTES);
@@ -173,10 +292,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Auto-seed profiles if table exists and is empty
       if (!profRes.error && profRes.data) {
         if (profRes.data.length > 0) {
-          setAllProfiles(profRes.data);
-          localStorage.setItem(STORAGE_KEYS.PROFILES_LIST, JSON.stringify(profRes.data));
+          let currentLocalVillage = DEFAULT_VILLAGE_CONFIG;
+          if (typeof window !== 'undefined') {
+            const rawV = localStorage.getItem(STORAGE_KEYS.VILLAGE_CONFIG);
+            if (rawV) {
+              try {
+                currentLocalVillage = { ...DEFAULT_VILLAGE_CONFIG, ...JSON.parse(rawV) };
+              } catch {}
+            }
+          }
+          const { profiles: hydratedProfiles, village: hydratedVillage } =
+            hydrateProfilesAndVillage(profRes.data, currentLocalVillage);
+          setAllProfiles(hydratedProfiles);
+          setVillageConfig(hydratedVillage);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEYS.PROFILES_LIST, JSON.stringify(hydratedProfiles));
+            localStorage.setItem(STORAGE_KEYS.VILLAGE_CONFIG, JSON.stringify(hydratedVillage));
+          }
         } else {
-          await supabase.from('profiles').upsert(DEMO_PROFILES.map(sanitizeProfile), { onConflict: 'id' });
+          await supabase
+            .from('profiles')
+            .upsert(DEMO_PROFILES.map((p) => sanitizeProfile(p, DEFAULT_VILLAGE_CONFIG)), {
+              onConflict: 'id',
+            });
         }
       }
 
@@ -208,7 +346,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       }
 
-      const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const now = new Date().toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
       setLastSyncedAt(now);
       localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
     } catch (err) {
@@ -231,32 +373,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // 1. Load stored profiles list
+    // 1. Load stored village config
+    let loadedVillage = DEFAULT_VILLAGE_CONFIG;
+    const savedVillage = localStorage.getItem(STORAGE_KEYS.VILLAGE_CONFIG);
+    if (savedVillage) {
+      try {
+        loadedVillage = { ...DEFAULT_VILLAGE_CONFIG, ...JSON.parse(savedVillage) };
+        setVillageConfig(loadedVillage);
+      } catch {}
+    }
+
+    // 2. Load stored profiles list
     let loadedProfiles = DEMO_PROFILES;
     const savedProfilesList = localStorage.getItem(STORAGE_KEYS.PROFILES_LIST);
     if (savedProfilesList) {
       try {
         const parsed = JSON.parse(savedProfilesList);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          loadedProfiles = parsed;
-          setAllProfiles(parsed);
+          const hydrated = hydrateProfilesAndVillage(parsed, loadedVillage);
+          loadedProfiles = hydrated.profiles;
+          setAllProfiles(hydrated.profiles);
         }
       } catch (e) {
         console.error('Error parsing saved profiles', e);
       }
     }
 
-    // 2. Load stored active profile
-    const rawSavedProfileId =
-      localStorage.getItem(STORAGE_KEYS.PROFILE) ||
-      localStorage.getItem('karanghaur_profile_id');
-    if (rawSavedProfileId) {
+    // 3. Load stored authenticated profile session
+    const savedAuthSession = localStorage.getItem(STORAGE_KEYS.AUTH_SESSION);
+    const rawSavedProfileId = localStorage.getItem(STORAGE_KEYS.PROFILE);
+    if (savedAuthSession === 'authenticated' && rawSavedProfileId) {
       const mappedId = LEGACY_PROFILE_MAP[rawSavedProfileId] || rawSavedProfileId;
       const found = loadedProfiles.find((p) => p.id === mappedId);
-      if (found) setCurrentProfile(found);
+      if (found) {
+        setCurrentProfile(found);
+        setIsAuthenticated(true);
+      }
     }
 
-    // 3. Load stored families from cache
+    // 4. Load stored families from cache
     const savedFamilies = localStorage.getItem(STORAGE_KEYS.FAMILIES);
     if (savedFamilies) {
       try {
@@ -266,7 +421,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
 
-    // 4. Load stored citizens from cache
+    // 5. Load stored citizens from cache
     const savedCitizens = localStorage.getItem(STORAGE_KEYS.CITIZENS);
     if (savedCitizens) {
       try {
@@ -276,7 +431,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
 
-    // 5. Load stored notes from cache
+    // 6. Load stored notes from cache
     const savedNotes = localStorage.getItem(STORAGE_KEYS.NOTES);
     if (savedNotes) {
       try {
@@ -286,51 +441,72 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
 
-    // 6. Load last sync time
+    // 7. Load last sync time
     const savedSync = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
     if (savedSync) setLastSyncedAt(savedSync);
 
     setIsLoading(false);
 
-    // 7. Automatically fetch live data from Supabase Cloud on start
+    // 8. Automatically fetch live data from Supabase Cloud on start
     if (navigator.onLine && isSupabaseConfigured && supabase) {
       refreshFromSupabase();
     }
 
-    // 8. Establish Supabase Realtime Subscription
+    // 9. Establish Supabase Realtime Subscription
     let channel: any = null;
     if (isSupabaseConfigured && supabase) {
       channel = supabase
         .channel('karanghaur-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+          refreshFromSupabase();
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'families' }, (payload) => {
           if (payload.eventType === 'INSERT') {
-            setFamilies((prev) => [payload.new as Family, ...prev.filter((f) => f.id !== payload.new.id && f.no_kk !== (payload.new as Family).no_kk)]);
+            setFamilies((prev) => [
+              payload.new as Family,
+              ...prev.filter((f) => f.id !== payload.new.id && f.no_kk !== (payload.new as Family).no_kk),
+            ]);
           } else if (payload.eventType === 'UPDATE') {
-            setFamilies((prev) => prev.map((f) => (f.id === payload.new.id ? { ...f, ...(payload.new as Family) } : f)));
+            setFamilies((prev) =>
+              prev.map((f) => (f.id === payload.new.id ? { ...f, ...(payload.new as Family) } : f))
+            );
           } else if (payload.eventType === 'DELETE') {
             setFamilies((prev) => prev.filter((f) => f.id !== payload.old.id));
           }
-          setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          setLastSyncedAt(
+            new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          );
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'citizens' }, (payload) => {
           if (payload.eventType === 'INSERT') {
-            setCitizens((prev) => [payload.new as Citizen, ...prev.filter((c) => c.id !== payload.new.id && c.nik !== (payload.new as Citizen).nik)]);
+            setCitizens((prev) => [
+              payload.new as Citizen,
+              ...prev.filter((c) => c.id !== payload.new.id && c.nik !== (payload.new as Citizen).nik),
+            ]);
           } else if (payload.eventType === 'UPDATE') {
-            setCitizens((prev) => prev.map((c) => (c.id === payload.new.id ? { ...c, ...(payload.new as Citizen) } : c)));
+            setCitizens((prev) =>
+              prev.map((c) => (c.id === payload.new.id ? { ...c, ...(payload.new as Citizen) } : c))
+            );
           } else if (payload.eventType === 'DELETE') {
             setCitizens((prev) => prev.filter((c) => c.id !== payload.old.id));
           }
-          setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          setLastSyncedAt(
+            new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          );
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, (payload) => {
           if (payload.eventType === 'INSERT') {
             setNotes((prev) => [payload.new as Note, ...prev.filter((n) => n.id !== payload.new.id)]);
           } else if (payload.eventType === 'UPDATE') {
-            setNotes((prev) => prev.map((n) => (n.id === payload.new.id ? { ...n, ...(payload.new as Note) } : n)));
+            setNotes((prev) =>
+              prev.map((n) => (n.id === payload.new.id ? { ...n, ...(payload.new as Note) } : n))
+            );
           } else if (payload.eventType === 'DELETE') {
             setNotes((prev) => prev.filter((n) => n.id !== payload.old.id));
           }
-          setLastSyncedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          setLastSyncedAt(
+            new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          );
         })
         .subscribe();
     }
@@ -347,11 +523,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Save changes to localStorage for offline cache
   useEffect(() => {
     if (!isLoading && typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.PROFILES_LIST, JSON.stringify(allProfiles));
+      localStorage.setItem(STORAGE_KEYS.VILLAGE_CONFIG, JSON.stringify(villageConfig));
       localStorage.setItem(STORAGE_KEYS.FAMILIES, JSON.stringify(families));
       localStorage.setItem(STORAGE_KEYS.CITIZENS, JSON.stringify(citizens));
       localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
     }
-  }, [families, citizens, notes, isLoading]);
+  }, [allProfiles, villageConfig, families, citizens, notes, isLoading]);
 
   // Keep currentProfile synced if allProfiles updates
   useEffect(() => {
@@ -363,23 +541,187 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [allProfiles, currentProfile]);
 
-  // Handle Profile Switch
-  const switchProfile = (profileId: string) => {
+  // Mandatory PIN Login
+  const loginWithPin = (profileId: string, pinInput: string) => {
     const mappedId = LEGACY_PROFILE_MAP[profileId] || profileId;
     const target = allProfiles.find((p) => p.id === mappedId);
-    if (target) {
-      setCurrentProfile(target);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEYS.PROFILE, target.id);
-      }
+    if (!target) {
+      return { success: false, error: 'Akun petugas tidak ditemukan.' };
     }
+
+    const expectedPin = getDefaultPinForProfile(target);
+    if (pinInput.trim() !== expectedPin) {
+      return {
+        success: false,
+        error: 'PIN akses tidak sesuai! Silakan masukkan PIN yang telah disetting oleh Admin Desa.',
+      };
+    }
+
+    setCurrentProfile(target);
+    setIsAuthenticated(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.PROFILE, target.id);
+      localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, 'authenticated');
+    }
+    return { success: true };
+  };
+
+  // Switch Profile (Requires PIN verification unless already Admin switching or PIN matches)
+  const switchProfile = (profileId: string, pinInput?: string) => {
+    const mappedId = LEGACY_PROFILE_MAP[profileId] || profileId;
+    const target = allProfiles.find((p) => p.id === mappedId);
+    if (!target) {
+      return { success: false, error: 'Akun tidak ditemukan.' };
+    }
+
+    const expectedPin = getDefaultPinForProfile(target);
+    if (pinInput !== undefined && pinInput.trim() !== expectedPin) {
+      return {
+        success: false,
+        error: 'PIN tidak sesuai untuk akun tersebut!',
+      };
+    }
+
+    setCurrentProfile(target);
+    setIsAuthenticated(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.PROFILE, target.id);
+      localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, 'authenticated');
+    }
+    return { success: true };
   };
 
   const logout = () => {
     setCurrentProfile(null);
+    setIsAuthenticated(false);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_KEYS.PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.AUTH_SESSION);
     }
+  };
+
+  // Update Village Config (Admin Only)
+  const updateVillageConfig = async (partial: Partial<VillageConfig>) => {
+    if (currentProfile?.role !== 'admin') {
+      return { success: false, error: 'Hanya Admin Desa yang dapat mengubah profil desa.' };
+    }
+
+    const updatedVillage: VillageConfig = {
+      ...villageConfig,
+      ...partial,
+    };
+    setVillageConfig(updatedVillage);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.VILLAGE_CONFIG, JSON.stringify(updatedVillage));
+    }
+
+    // Persist inside admin profile's metadata on Supabase
+    const adminProf = allProfiles.find((p) => p.role === 'admin') || currentProfile;
+    if (isSupabaseConfigured && supabase && adminProf) {
+      try {
+        const cleanAdmin = sanitizeProfile(adminProf, updatedVillage);
+        const { error } = await supabase.from('profiles').upsert(cleanAdmin, { onConflict: 'id' });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        setLastSyncedAt(new Date().toLocaleTimeString('id-ID'));
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    return { success: true };
+  };
+
+  // Account & PIN CRUD (Admin Only)
+  const addProfile = async (profileData: Omit<Profile, 'id' | 'created_at'>) => {
+    if (currentProfile?.role !== 'admin') {
+      return { success: false, error: 'Hanya Admin Desa yang dapat menambah akun petugas.' };
+    }
+
+    const newProfile: Profile = {
+      ...profileData,
+      id: `prof-${profileData.role}-${Date.now()}`,
+      pin: profileData.pin?.trim() || '123456',
+      created_at: new Date().toISOString(),
+    };
+
+    setAllProfiles((prev) => [...prev, newProfile]);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const clean = sanitizeProfile(newProfile, villageConfig);
+        const { error } = await supabase.from('profiles').upsert(clean, { onConflict: 'id' });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        setLastSyncedAt(new Date().toLocaleTimeString('id-ID'));
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    return { success: true, data: newProfile };
+  };
+
+  const updateProfile = async (id: string, partial: Partial<Profile>) => {
+    if (currentProfile?.role !== 'admin') {
+      return { success: false, error: 'Hanya Admin Desa yang dapat mengubah akun & PIN petugas.' };
+    }
+
+    const existing = allProfiles.find((p) => p.id === id);
+    if (!existing) {
+      return { success: false, error: 'Akun tidak ditemukan.' };
+    }
+
+    const updatedProfile: Profile = {
+      ...existing,
+      ...partial,
+      pin: partial.pin !== undefined ? partial.pin.trim() : existing.pin,
+    };
+
+    setAllProfiles((prev) => prev.map((p) => (p.id === id ? updatedProfile : p)));
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const clean = sanitizeProfile(updatedProfile, villageConfig);
+        const { error } = await supabase.from('profiles').upsert(clean, { onConflict: 'id' });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        setLastSyncedAt(new Date().toLocaleTimeString('id-ID'));
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    return { success: true };
+  };
+
+  const deleteProfile = async (id: string) => {
+    if (currentProfile?.role !== 'admin') {
+      return { success: false, error: 'Hanya Admin Desa yang dapat menghapus akun petugas.' };
+    }
+    if (id === currentProfile.id) {
+      return { success: false, error: 'Tidak dapat menghapus akun Admin yang sedang aktif digunakan.' };
+    }
+
+    setAllProfiles((prev) => prev.filter((p) => p.id !== id));
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.from('profiles').delete().eq('id', id);
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        setLastSyncedAt(new Date().toLocaleTimeString('id-ID'));
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    return { success: true };
   };
 
   // RBAC Filtered Data
@@ -443,7 +785,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setNotes((prev) => [newNote, ...prev]);
 
-    // Live Sync to Supabase
     if (isSupabaseConfigured && supabase) {
       try {
         const clean = sanitizeNote(newNote);
@@ -605,7 +946,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setCitizens((prev) => [newCit, ...prev]);
 
-    // Auto-sync Kepala Keluarga name on parent Family if hubungan_keluarga is Kepala Keluarga
     if (citData.hubungan_keluarga === 'Kepala Keluarga' && citData.family_id) {
       setFamilies((prev) =>
         prev.map((f) =>
@@ -720,7 +1060,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
     }
 
-    // 1. Resolve family IDs so existing no_kk keeps its canonical ID and remaps incoming family_id
     const existingFamByNoKk = new Map(families.map((f) => [f.no_kk, f]));
     const familyIdRemap = new Map<string, string>();
 
@@ -735,7 +1074,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
     });
 
-    // 2. Resolve citizen IDs by NIK and remap their family_id to canonical family ID
     const existingCitByNik = new Map(citizens.map((c) => [c.nik, c]));
     const resolvedIncomingCitizens: Citizen[] = incomingCitizens.map((c) => {
       const existing = existingCitByNik.get(c.nik);
@@ -749,7 +1087,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
     });
 
-    // Merge into local state
     setFamilies((prev) => {
       const map = new Map(prev.map((f) => [f.no_kk, f]));
       resolvedIncomingFamilies.forEach((f) => map.set(f.no_kk, f));
@@ -762,7 +1099,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return Array.from(map.values());
     });
 
-    // Upsert to Supabase with canonical IDs
     if (isSupabaseConfigured && supabase) {
       try {
         const cleanFamilies = resolvedIncomingFamilies.map(sanitizeFamily);
@@ -810,7 +1146,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     try {
       setIsSyncingWithSupabase(true);
-      const cleanProfiles = allProfiles.map(sanitizeProfile);
+      const cleanProfiles = allProfiles.map((p) => sanitizeProfile(p, villageConfig));
       const cleanFamilies = families.map(sanitizeFamily);
       const cleanCitizens = citizens.map(sanitizeCitizen);
       const cleanNotes = notes.map(sanitizeNote);
@@ -828,13 +1164,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (noteErr) throw noteErr;
       }
 
-      const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const now = new Date().toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
       setLastSyncedAt(now);
       localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
 
       return {
         success: true,
-        message: `Berhasil menyinkronkan ${families.length} KK, ${citizens.length} Warga, dan ${notes.length} Catatan ke Supabase Cloud!`,
+        message: `Berhasil menyinkronkan ${allProfiles.length} Akun/PIN, Profil Desa, ${families.length} KK, ${citizens.length} Warga, dan ${notes.length} Catatan ke Supabase Cloud!`,
       };
     } catch (err: any) {
       console.error('Supabase sync error:', err);
@@ -866,8 +1206,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (noteRes.error) throw noteRes.error;
 
       if (profRes.data && profRes.data.length > 0) {
-        setAllProfiles(profRes.data);
-        localStorage.setItem(STORAGE_KEYS.PROFILES_LIST, JSON.stringify(profRes.data));
+        const { profiles: hydratedProfiles, village: hydratedVillage } =
+          hydrateProfilesAndVillage(profRes.data, villageConfig);
+        setAllProfiles(hydratedProfiles);
+        setVillageConfig(hydratedVillage);
+        localStorage.setItem(STORAGE_KEYS.PROFILES_LIST, JSON.stringify(hydratedProfiles));
+        localStorage.setItem(STORAGE_KEYS.VILLAGE_CONFIG, JSON.stringify(hydratedVillage));
       }
 
       let count = 0;
@@ -886,7 +1230,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(noteRes.data));
       }
 
-      const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const now = new Date().toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
       setLastSyncedAt(now);
       localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
 
@@ -926,8 +1274,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       value={{
         currentProfile,
         allProfiles,
+        isAuthenticated,
+        loginWithPin,
         switchProfile,
         logout,
+        villageConfig,
+        updateVillageConfig,
+        addProfile,
+        updateProfile,
+        deleteProfile,
         families,
         citizens,
         notes,

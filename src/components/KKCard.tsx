@@ -43,7 +43,7 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
       {/* Top Bar with KK Number & Barcode Tag */}
       <div className="px-3.5 py-2.5 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between flex-wrap gap-1.5">
         <div className="flex items-center space-x-1.5">
-          <FileText className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+          <FileText className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
           <span className="font-mono text-xs font-bold text-slate-800">
             {family.no_kk}
           </span>
@@ -95,7 +95,7 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
 
           <Link
             href={`/kk/${family.id}`}
-            className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors flex-shrink-0"
+            className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-sky-600 transition-colors flex-shrink-0"
             title="Lihat Detail Kartu Keluarga"
           >
             <ChevronRight className="w-4 h-4" />
@@ -135,7 +135,7 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
         <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 focus:outline-none"
+            className="text-sky-600 hover:text-blue-700 font-semibold flex items-center gap-1 focus:outline-none"
           >
             <span>{isExpanded ? 'Sembunyikan Anggota' : 'Lihat Anggota Keluarga'}</span>
             <ChevronRight
@@ -148,9 +148,9 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
           {onOpenNoteModal && (
             <button
               onClick={() => onOpenNoteModal(family)}
-              className="inline-flex items-center text-[11px] font-semibold text-slate-700 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors border border-slate-200 flex-shrink-0"
+              className="inline-flex items-center text-[11px] font-semibold text-slate-700 hover:text-sky-600 bg-slate-100 hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors border border-slate-200 flex-shrink-0"
             >
-              <MessageSquarePlus className="w-3 h-3 mr-1 text-blue-600" />
+              <MessageSquarePlus className="w-3 h-3 mr-1 text-sky-600" />
               Catat KK
             </button>
           )}

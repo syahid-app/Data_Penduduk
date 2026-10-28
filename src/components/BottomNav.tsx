@@ -10,13 +10,15 @@ import {
   Users,
   MessageSquareText,
   UserCheck,
+  Settings,
 } from 'lucide-react';
 
 export const BottomNav: React.FC = () => {
   const pathname = usePathname();
-  const { visibleNotes } = useApp();
+  const { visibleNotes, currentProfile } = useApp();
 
   const pendingNotesCount = visibleNotes.filter((n) => n.status === 'pending').length;
+  const isAdmin = currentProfile?.role === 'admin';
 
   const navItems = [
     {
@@ -32,7 +34,7 @@ export const BottomNav: React.FC = () => {
       exact: false,
     },
     {
-      label: 'Warga NIK',
+      label: 'Warga',
       href: '/warga',
       icon: Users,
       exact: false,
@@ -44,6 +46,16 @@ export const BottomNav: React.FC = () => {
       exact: false,
       badge: pendingNotesCount > 0 ? pendingNotesCount : undefined,
     },
+    ...(isAdmin
+      ? [
+          {
+            label: 'Pengaturan',
+            href: '/pengaturan',
+            icon: Settings,
+            exact: false,
+          },
+        ]
+      : []),
     {
       label: 'Profil',
       href: '/profil',
@@ -54,7 +66,11 @@ export const BottomNav: React.FC = () => {
 
   return (
     <nav className="w-full bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom)] select-none">
-      <div className="grid grid-cols-5 h-14 sm:h-16 items-center px-1">
+      <div
+        className={`grid ${
+          isAdmin ? 'grid-cols-6' : 'grid-cols-5'
+        } h-14 sm:h-16 items-center px-0.5`}
+      >
         {navItems.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
@@ -67,7 +83,7 @@ export const BottomNav: React.FC = () => {
               href={item.href}
               className={`flex flex-col items-center justify-center py-1 transition-all group relative ${
                 isActive
-                  ? 'text-blue-600 font-bold'
+                  ? 'text-sky-600 font-bold'
                   : 'text-slate-500 hover:text-slate-800 font-medium'
               }`}
             >
@@ -79,7 +95,7 @@ export const BottomNav: React.FC = () => {
                 >
                   <Icon
                     className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${
-                      isActive ? 'text-blue-600 stroke-[2.4]' : 'text-slate-500'
+                      isActive ? 'text-sky-600 stroke-[2.4]' : 'text-slate-500'
                     }`}
                   />
                 </div>
@@ -92,15 +108,15 @@ export const BottomNav: React.FC = () => {
               </div>
 
               <span
-                className={`text-[10px] leading-tight mt-0.5 tracking-tight whitespace-nowrap transition-all ${
-                  isActive ? 'text-blue-600 font-bold' : 'text-slate-500'
+                className={`text-[9px] sm:text-[10px] leading-tight mt-0.5 tracking-tight whitespace-nowrap transition-all ${
+                  isActive ? 'text-sky-600 font-bold' : 'text-slate-500'
                 }`}
               >
                 {item.label}
               </span>
 
               {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-0.5" />
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-500 mt-0.5" />
               )}
             </Link>
           );

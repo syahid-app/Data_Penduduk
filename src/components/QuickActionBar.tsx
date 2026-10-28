@@ -71,7 +71,7 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
         {isAdmin && onOpenAddKKModal && (
           <button
             onClick={onOpenAddKKModal}
-            className="inline-flex items-center text-[10px] sm:text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition-colors flex-shrink-0"
+            className="inline-flex items-center text-[10px] sm:text-[11px] font-bold text-sky-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full transition-colors flex-shrink-0"
           >
             <PlusCircle className="w-3 h-3 mr-1" />
             Tambah KK Baru

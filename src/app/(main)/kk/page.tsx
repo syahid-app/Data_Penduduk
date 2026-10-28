@@ -160,7 +160,7 @@ function KKListContent() {
         {/* Title & Add KK */}
         <div className="flex items-center justify-between flex-wrap gap-1.5">
           <div className="flex items-center flex-wrap gap-1.5 min-w-0">
-            <FileSpreadsheet className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            <FileSpreadsheet className="w-4 h-4 text-sky-600 flex-shrink-0" />
             <h1 className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
               Tabel Data KK
             </h1>
@@ -175,7 +175,7 @@ function KKListContent() {
                 setEditingFamily(null);
                 setIsAddKKModalOpen(true);
               }}
-              className="inline-flex items-center text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg shadow-sm transition-all active:scale-95 flex-shrink-0"
+              className="inline-flex items-center text-[11px] font-bold bg-sky-500 hover:bg-sky-600 text-white px-2.5 py-1 rounded-lg shadow-sm transition-all active:scale-95 flex-shrink-0"
             >
               <PlusCircle className="w-3.5 h-3.5 mr-1" />
               <span>+ Tambah KK</span>
@@ -194,7 +194,7 @@ function KKListContent() {
                 setCurrentPage(1);
               }}
               placeholder="Cari Nama Kepala Keluarga, No. KK, Alamat..."
-              className="w-full pl-7 pr-6 py-1.5 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-900 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full pl-7 pr-6 py-1.5 text-[11px] bg-white border border-slate-200 rounded-lg text-slate-900 focus:ring-1 focus:ring-sky-500 outline-none"
             />
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" />
             {searchQuery && (
@@ -213,7 +213,7 @@ function KKListContent() {
           {isAnyFilterActive && (
             <button
               onClick={handleResetFilters}
-              className="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 font-bold flex items-center gap-1 text-[11px] flex-shrink-0"
+              className="px-2.5 py-1.5 rounded-lg bg-blue-50 text-sky-600 hover:bg-blue-100 border border-blue-200 font-bold flex items-center gap-1 text-[11px] flex-shrink-0"
               title="Reset Semua Filter"
             >
               <RotateCcw className="w-3 h-3" />
@@ -231,7 +231,7 @@ function KKListContent() {
             }}
             className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
               activeFilter === 'all'
-                ? 'bg-blue-600 text-white shadow-sm'
+                ? 'bg-sky-500 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
             }`}
           >
@@ -289,7 +289,7 @@ function KKListContent() {
             }}
             className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all inline-flex items-center gap-1 ${
               activeFilter === 'bansos'
-                ? 'bg-blue-600 text-white shadow-sm'
+                ? 'bg-sky-500 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
             }`}
           >
@@ -372,7 +372,7 @@ function KKListContent() {
                       {isAnyFilterActive && (
                         <button
                           onClick={handleResetFilters}
-                          className="mt-2 px-3 py-1 bg-blue-600 text-white rounded-lg text-[11px] font-semibold hover:bg-blue-700"
+                          className="mt-2 px-3 py-1 bg-sky-500 text-white rounded-lg text-[11px] font-semibold hover:bg-sky-600"
                         >
                           Reset Filter
                         </button>
@@ -438,7 +438,7 @@ function KKListContent() {
                             </span>
                             <button
                               onClick={(e) => handleCopyNoKK(family.no_kk, e)}
-                              className="p-0.5 text-slate-400 hover:text-blue-600 rounded"
+                              className="p-0.5 text-slate-400 hover:text-sky-600 rounded"
                               title="Salin No. KK"
                             >
                               {copiedNoKK === family.no_kk ? (
@@ -531,7 +531,7 @@ function KKListContent() {
                                 setSelectedFamilyForNote(family);
                                 setIsNoteModalOpen(true);
                               }}
-                              className="p-1 text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded border border-blue-200 transition-colors"
+                              className="p-1 text-sky-600 hover:text-white bg-blue-50 hover:bg-sky-500 rounded border border-blue-200 transition-colors"
                               title="Kirim Catatan KK"
                             >
                               <MessageSquarePlus className="w-3 h-3" />
@@ -544,7 +544,7 @@ function KKListContent() {
                                     setEditingFamily(family);
                                     setIsAddKKModalOpen(true);
                                   }}
-                                  className="p-1 text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded border border-blue-200 transition-colors"
+                                  className="p-1 text-sky-600 hover:text-white bg-blue-50 hover:bg-sky-500 rounded border border-blue-200 transition-colors"
                                   title="Edit KK"
                                 >
                                   <Edit3 className="w-3 h-3" />
@@ -650,7 +650,7 @@ function KKListContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3.5 animate-fade-in">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[88dvh] flex flex-col overflow-hidden animate-slide-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white flex items-start justify-between gap-2 flex-shrink-0">
+            <div className="bg-gradient-to-r from-sky-500 to-cyan-500 p-4 text-white flex items-start justify-between gap-2 flex-shrink-0">
               <div className="min-w-0 flex-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-100 block">
                   Detail Kartu Keluarga
@@ -720,7 +720,7 @@ function KKListContent() {
               {/* Wilayah & Domisili */}
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
                 <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                  <MapPin className="w-3.5 h-3.5 text-sky-600" />
                   Wilayah & Alamat Lengkap
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
@@ -791,12 +791,12 @@ function KKListContent() {
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-blue-600" />
+                        <Users className="w-3.5 h-3.5 text-sky-600" />
                         Anggota Keluarga ({members.length} Jiwa)
                       </h4>
                       <Link
                         href={`/kk/${activeDetailFamily.id}`}
-                        className="text-[10px] font-bold text-blue-600 hover:underline inline-flex items-center gap-0.5"
+                        className="text-[10px] font-bold text-sky-600 hover:underline inline-flex items-center gap-0.5"
                       >
                         <span>Kelola Anggota</span>
                         <ExternalLink className="w-2.5 h-2.5" />
@@ -859,7 +859,7 @@ function KKListContent() {
                 href={`/kk/${activeDetailFamily.id}`}
                 className="inline-flex items-center text-[11px] font-bold text-slate-700 hover:text-slate-900 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-sm"
               >
-                <ExternalLink className="w-3.5 h-3.5 mr-1 text-blue-600" />
+                <ExternalLink className="w-3.5 h-3.5 mr-1 text-sky-600" />
                 Halaman KK & Anggota
               </Link>
 
@@ -871,7 +871,7 @@ function KKListContent() {
                     setSelectedFamilyForNote(fam);
                     setIsNoteModalOpen(true);
                   }}
-                  className="inline-flex items-center text-[11px] font-bold bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 px-2.5 py-1.5 rounded-xl transition-colors"
+                  className="inline-flex items-center text-[11px] font-bold bg-blue-50 hover:bg-sky-500 text-blue-700 hover:text-white border border-blue-200 px-2.5 py-1.5 rounded-xl transition-colors"
                 >
                   <MessageSquarePlus className="w-3.5 h-3.5 mr-1" />
                   Catat KK
@@ -885,7 +885,7 @@ function KKListContent() {
                         setEditingFamily(fam);
                         setIsAddKKModalOpen(true);
                       }}
-                      className="inline-flex items-center text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl transition-colors"
+                      className="inline-flex items-center text-[11px] font-bold bg-sky-500 hover:bg-sky-600 text-white px-2.5 py-1.5 rounded-xl transition-colors"
                     >
                       <Edit3 className="w-3.5 h-3.5 mr-1" />
                       Edit KK

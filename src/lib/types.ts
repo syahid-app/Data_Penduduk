@@ -16,7 +16,20 @@ export interface Profile {
   assigned_rt?: string | null;    // e.g. '001'
   created_at?: string;
   phone?: string;
+  pin?: string;                   // PIN untuk login wajib semua role
   avatar_url?: string;
+}
+
+export interface VillageConfig {
+  nama_desa: string;
+  kepala_desa: string;
+  alamat_desa: string;
+  kecamatan: string;
+  kabupaten: string;
+  provinsi: string;
+  kode_pos: string;
+  telepon_desa?: string;
+  email_desa?: string;
 }
 
 export interface Family {

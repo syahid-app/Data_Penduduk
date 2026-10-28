@@ -1,4 +1,16 @@
-import { Profile, Family, Citizen, Note, VillageStats, MaritalStatus } from './types';
+import { Profile, Family, Citizen, Note, VillageStats, MaritalStatus, VillageConfig } from './types';
+
+export const DEFAULT_VILLAGE_CONFIG: VillageConfig = {
+  nama_desa: 'Desa Karanghaur',
+  kepala_desa: 'H. Sulaeman, S.IP',
+  alamat_desa: 'Jl. Raya Karanghaur No. 01, Kec. Pebayuran, Kab. Bekasi',
+  kecamatan: 'Pebayuran',
+  kabupaten: 'Bekasi',
+  provinsi: 'Jawa Barat',
+  kode_pos: '17710',
+  telepon_desa: '021-89150001',
+  email_desa: 'pemdes@karanghaur.desa.id',
+};
 
 export function getCitizenMaritalStatus(citizen: Citizen): MaritalStatus {
   if (citizen.status_perkawinan) return citizen.status_perkawinan;
@@ -46,6 +58,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: null,
     assigned_rt: null,
     phone: '0812-9988-7766',
+    pin: '123456',
   },
   {
     id: 'prof-kadus-1',
@@ -55,6 +68,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: null,
     assigned_rt: null,
     phone: '0813-1122-3344',
+    pin: '111111',
   },
   {
     id: 'prof-kadus-2',
@@ -64,6 +78,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: null,
     assigned_rt: null,
     phone: '0813-2233-4455',
+    pin: '111112',
   },
   {
     id: 'prof-kadus-3',
@@ -73,6 +88,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: null,
     assigned_rt: null,
     phone: '0813-3344-5566',
+    pin: '111113',
   },
   {
     id: 'prof-rw-01',
@@ -82,6 +98,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: '001',
     assigned_rt: null,
     phone: '0857-4455-6677',
+    pin: '222221',
   },
   {
     id: 'prof-rw-02',
@@ -91,6 +108,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: '002',
     assigned_rt: null,
     phone: '0857-5566-7788',
+    pin: '222222',
   },
   {
     id: 'prof-rt-01',
@@ -100,6 +118,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: '001',
     assigned_rt: '001',
     phone: '0896-1234-5678',
+    pin: '333331',
   },
   {
     id: 'prof-rt-02',
@@ -109,6 +128,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: '001',
     assigned_rt: '002',
     phone: '0896-2345-6789',
+    pin: '333332',
   },
   {
     id: 'prof-rt-03',
@@ -118,6 +138,7 @@ export const DEMO_PROFILES: Profile[] = [
     assigned_rw: '002',
     assigned_rt: '001',
     phone: '0896-3456-7890',
+    pin: '333333',
   },
 ];
 

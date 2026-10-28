@@ -58,7 +58,7 @@ export default function CatatanHubPage() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
-              <MessageSquareText className="w-4 h-4 text-blue-600" />
+              <MessageSquareText className="w-4 h-4 text-sky-600" />
               <span>Catatan & Laporan Wilayah</span>
             </h1>
             <p className="text-[10px] text-slate-500">
@@ -68,7 +68,7 @@ export default function CatatanHubPage() {
 
           <button
             onClick={() => setIsNoteModalOpen(true)}
-            className="inline-flex items-center text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl shadow-sm transition-all active:scale-95 flex-shrink-0"
+            className="inline-flex items-center text-xs font-bold bg-sky-500 hover:bg-sky-600 text-white px-2.5 py-1.5 rounded-xl shadow-sm transition-all active:scale-95 flex-shrink-0"
           >
             <PlusCircle className="w-3.5 h-3.5 mr-1" />
             Buat Catatan
@@ -81,7 +81,7 @@ export default function CatatanHubPage() {
             onClick={() => setActiveTab('all')}
             className={`py-1.5 px-1 rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'all'
-                ? 'bg-white text-blue-600 shadow-sm'
+                ? 'bg-white text-sky-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -101,7 +101,7 @@ export default function CatatanHubPage() {
             onClick={() => setActiveTab('reviewed')}
             className={`py-1.5 px-1 rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'reviewed'
-                ? 'bg-white text-blue-600 shadow-sm'
+                ? 'bg-white text-sky-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -174,11 +174,11 @@ export default function CatatanHubPage() {
                   <div className="space-y-0.5">
                     {note.family_no_kk && (
                       <div className="flex items-center text-xs font-mono font-bold text-slate-800">
-                        <FileText className="w-3.5 h-3.5 text-blue-600 mr-1" />
+                        <FileText className="w-3.5 h-3.5 text-sky-600 mr-1" />
                         {note.family_id ? (
                           <Link
                             href={`/kk/${note.family_id}`}
-                            className="hover:text-blue-600 hover:underline inline-flex items-center gap-1"
+                            className="hover:text-sky-600 hover:underline inline-flex items-center gap-1"
                           >
                             <span>KK: {note.family_no_kk}</span>
                             <ExternalLink className="w-2.5 h-2.5" />
@@ -190,7 +190,7 @@ export default function CatatanHubPage() {
                     )}
                     {note.citizen_name && (
                       <div className="flex items-center text-xs font-semibold text-slate-700">
-                        <User className="w-3.5 h-3.5 text-blue-600 mr-1" />
+                        <User className="w-3.5 h-3.5 text-sky-600 mr-1" />
                         <span>{note.citizen_name}</span>
                         {note.citizen_nik && (
                           <span className="text-[10px] text-slate-400 font-mono ml-1">

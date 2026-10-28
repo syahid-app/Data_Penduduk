@@ -96,7 +96,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-sky-600 flex items-center justify-center">
               <MessageSquarePlus className="w-4 h-4" />
             </div>
             <div>
@@ -146,7 +146,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                   setSelectedFamilyId(e.target.value);
                   setSelectedCitizenId('');
                 }}
-                className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
               >
                 <option value="">-- Pilih KK (Atau Umum Wilayah) --</option>
                 {visibleFamilies.map((fam) => (
@@ -169,7 +169,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                 <select
                   value={selectedCitizenId}
                   onChange={(e) => setSelectedCitizenId(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
                 >
                   <option value="">-- Seluruh Anggota Keluarga --</option>
                   {availableCitizens.map((cit) => (
@@ -193,7 +193,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Contoh: Warga pindah domisili, perbaikan NIK/tanggal lahir, permohonan bantuan sosial KPM, atau status kematian..."
-              className="w-full p-2.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+              className="w-full p-2.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none resize-none"
               required
             />
             <p className="text-[11px] text-slate-400 mt-1">
@@ -213,7 +213,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold hover:brightness-105 active:scale-95 transition-all shadow-sm flex items-center justify-center space-x-1.5 disabled:opacity-50"
+              className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 text-white text-xs font-bold hover:brightness-105 active:scale-95 transition-all shadow-sm flex items-center justify-center space-x-1.5 disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Mengirim...' : 'Kirim Catatan'}</span>

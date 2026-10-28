@@ -20,13 +20,21 @@ import {
   Building,
   HeartHandshake,
   Clock,
+  MapPin,
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { currentProfile, visibleFamilies, visibleNotes, stats } = useApp();
+  const {
+    currentProfile,
+    villageConfig,
+    visibleFamilies,
+    visibleNotes,
+    stats,
+  } = useApp();
 
-  const [selectedFamilyForNote, setSelectedFamilyForNote] = useState<Family | null>(null);
+  const [selectedFamilyForNote, setSelectedFamilyForNote] =
+    useState<Family | null>(null);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isAddKKModalOpen, setIsAddKKModalOpen] = useState(false);
 
@@ -49,25 +57,38 @@ export default function DashboardPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* ===================================================================== */}
-      {/* FIXED TOP HEAD BAR (Wilayah Otoritas - Tidak ikut scrolling)          */}
+      {/* FIXED TOP HEAD BAR (Identitas Desa & Wilayah Otoritas - Biru Muda)    */}
       {/* ===================================================================== */}
       <div className="flex-shrink-0 px-3.5 sm:px-5 pt-2.5 pb-2 bg-slate-50 border-b border-slate-200/80 z-10">
-        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 rounded-xl p-3 text-white shadow-sm flex items-center justify-between gap-2">
+        <div className="bg-gradient-to-r from-sky-500 via-sky-400 to-cyan-500 rounded-xl p-3 text-white shadow-sm flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center space-x-1.5 text-blue-100 text-[10px] font-semibold">
+            <div className="flex items-center space-x-1.5 text-white/95 text-[10px] font-bold">
               <Building className="w-3 h-3 flex-shrink-0" />
-              <span>Wilayah Otoritas Aktif:</span>
+              <span>
+                {villageConfig.nama_desa} • Kepala Desa:{' '}
+                {villageConfig.kepala_desa}
+              </span>
             </div>
             <h2 className="text-xs sm:text-sm font-extrabold text-white mt-0.5 leading-snug break-words">
-              {currentProfile?.role === 'admin' && 'Pemerintah Desa Karanghaur (Seluruh Wilayah)'}
-              {currentProfile?.role === 'kadus' && `Wilayah ${currentProfile.assigned_dusun}`}
-              {currentProfile?.role === 'rw' && `Wilayah RW ${currentProfile.assigned_rw} - ${currentProfile.assigned_dusun}`}
-              {currentProfile?.role === 'rt' && `Wilayah RT ${currentProfile.assigned_rt} / RW ${currentProfile.assigned_rw}`}
+              {currentProfile?.role === 'admin' &&
+                `Pemerintah ${villageConfig.nama_desa} (Seluruh Wilayah)`}
+              {currentProfile?.role === 'kadus' &&
+                `Wilayah ${currentProfile.assigned_dusun} - ${villageConfig.nama_desa}`}
+              {currentProfile?.role === 'rw' &&
+                `Wilayah RW ${currentProfile.assigned_rw} (${currentProfile.assigned_dusun})`}
+              {currentProfile?.role === 'rt' &&
+                `Wilayah RT ${currentProfile.assigned_rt} / RW ${currentProfile.assigned_rw}`}
             </h2>
+            <p className="text-[10px] text-sky-50 mt-0.5 flex items-center gap-1 break-words">
+              <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+              <span>{villageConfig.alamat_desa}</span>
+            </p>
           </div>
 
-          <div className="px-2.5 py-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 text-white font-black text-xs border border-white/30">
-            {currentProfile?.role?.toUpperCase()}
+          <div className="px-2.5 py-1.5 rounded-lg bg-white/25 backdrop-blur-sm flex items-center justify-center flex-shrink-0 text-white font-black text-xs border border-white/30">
+            {currentProfile?.role === 'kadus'
+              ? 'DUSUN'
+              : currentProfile?.role?.toUpperCase()}
           </div>
         </div>
       </div>
@@ -80,17 +101,21 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-2 px-0.5">
             <span className="text-xs font-bold text-slate-800 tracking-tight flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+              <TrendingUp className="w-3.5 h-3.5 text-sky-600" />
               Ringkasan Statistik Wilayah
             </span>
-            <span className="text-[10px] text-emerald-600 font-bold">● Sinkron Real-time</span>
+            <span className="text-[10px] text-emerald-600 font-bold">
+              ● Real-time Database
+            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <StatCard
               title="Total KK"
               value={stats.totalKK}
-              subtitle={`${kkBarcodeCount} Barcode • ${stats.totalKK - kkBarcodeCount} Belum`}
+              subtitle={`${kkBarcodeCount} Barcode • ${
+                stats.totalKK - kkBarcodeCount
+              } Belum`}
               icon={FileSpreadsheet}
               colorScheme="blue"
               onClick={() => router.push('/kk')}
@@ -100,7 +125,9 @@ export default function DashboardPage() {
             <StatCard
               title="Total Penduduk"
               value={stats.totalJiwa}
-              subtitle={`${stats.lakiLaki.toLocaleString('id-ID')} L • ${stats.perempuan.toLocaleString('id-ID')} P`}
+              subtitle={`${stats.lakiLaki.toLocaleString(
+                'id-ID'
+              )} L • ${stats.perempuan.toLocaleString('id-ID')} P`}
               icon={Users}
               colorScheme="blue"
               onClick={() => router.push('/warga')}
@@ -118,11 +145,19 @@ export default function DashboardPage() {
             <StatCard
               title="Catatan / Laporan"
               value={stats.pendingNotes}
-              subtitle={stats.pendingNotes > 0 ? 'Menunggu Verifikasi' : 'Semua Tervalidasi'}
+              subtitle={
+                stats.pendingNotes > 0
+                  ? 'Menunggu Verifikasi'
+                  : 'Semua Tervalidasi'
+              }
               icon={MessageSquareWarning}
               colorScheme="amber"
               onClick={() => router.push('/catatan')}
-              badge={stats.pendingNotes > 0 ? `${stats.pendingNotes} Baru` : undefined}
+              badge={
+                stats.pendingNotes > 0
+                  ? `${stats.pendingNotes} Baru`
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -134,33 +169,41 @@ export default function DashboardPage() {
           onOpenAddKKModal={() => setIsAddKKModalOpen(true)}
         />
 
-        {/* 3. METRIK SOSIAL & KESEJAHTERAAN (REAL-TIME BREAKDOWN) */}
+        {/* 3. METRIK SOSIAL, USIA & KESEJAHTERAAN (100% REAL-TIME BREAKDOWN) */}
         <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-sm space-y-2.5">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
             <div className="flex items-center space-x-1.5">
-              <HeartHandshake className="w-4 h-4 text-blue-600" />
+              <HeartHandshake className="w-4 h-4 text-sky-600" />
               <span className="text-xs font-bold text-slate-800">
-                Jaminan Kesehatan & Bansos Wilayah
+                Demografi, Jaminan Kesehatan & Bansos
               </span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">SIP-KPM</span>
+            <span className="text-[10px] text-sky-600 font-bold">
+              Wajib KTP: {stats.wajibKtp} • Lansia: {stats.lansia}
+            </span>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-100">
-              <span className="block text-[10px] font-semibold text-emerald-800">BPJS KIS / PBI</span>
+              <span className="block text-[10px] font-semibold text-emerald-800">
+                BPJS KIS / PBI
+              </span>
               <span className="text-sm font-extrabold text-emerald-700">
                 {stats.bpjsKis.toLocaleString('id-ID')}
               </span>
             </div>
-            <div className="p-2 rounded-lg bg-blue-50 border border-blue-100">
-              <span className="block text-[10px] font-semibold text-blue-800">BPJS Mandiri</span>
-              <span className="text-sm font-extrabold text-blue-700">
+            <div className="p-2 rounded-lg bg-sky-50 border border-sky-100">
+              <span className="block text-[10px] font-semibold text-sky-800">
+                BPJS Mandiri
+              </span>
+              <span className="text-sm font-extrabold text-sky-700">
                 {stats.bpjsMandiri.toLocaleString('id-ID')}
               </span>
             </div>
             <div className="p-2 rounded-lg bg-slate-50 border border-slate-200">
-              <span className="block text-[10px] font-semibold text-slate-600">Disabilitas / TKI</span>
+              <span className="block text-[10px] font-semibold text-slate-600">
+                Disabilitas / TKI
+              </span>
               <span className="text-sm font-extrabold text-slate-700">
                 {stats.disabilitas} / {stats.tki}
               </span>
@@ -169,7 +212,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center justify-between pt-1 text-[11px] text-slate-600 flex-wrap gap-1">
             <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">
+              <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 font-bold text-[10px]">
                 BPNT: {stats.bansosBpnt} KK
               </span>
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
@@ -201,9 +244,9 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/kk"
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+              className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-0.5"
             >
-              <span>Semua KK</span>
+              <span>Tabel Semua KK</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -251,13 +294,17 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center justify-between text-[10px] text-slate-500 mb-0.5">
                     <span className="font-bold text-slate-700">
-                      {n.citizen_name ? `Warga: ${n.citizen_name}` : `KK: ${n.family_no_kk || '-'}`}
+                      {n.citizen_name
+                        ? `Warga: ${n.citizen_name}`
+                        : `KK: ${n.family_no_kk || '-'}`}
                     </span>
                     <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">
                       RT {n.rt} / RW {n.rw}
                     </span>
                   </div>
-                  <p className="text-slate-700 text-xs leading-snug break-words">{n.message}</p>
+                  <p className="text-slate-700 text-xs leading-snug break-words">
+                    {n.message}
+                  </p>
                 </div>
               ))}
             </div>

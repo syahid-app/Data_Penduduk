@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { NoteModal } from '@/components/NoteModal';
 import { AddKKModal } from '@/components/AddKKModal';
 import { useApp } from '@/lib/context';
-import { MessageSquarePlus, Plus } from 'lucide-react';
+import { MessageSquarePlus, Plus, KeyRound } from 'lucide-react';
 
 export default function MainLayout({
   children,
@@ -15,16 +15,38 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { currentProfile } = useApp();
+  const router = useRouter();
+  const { currentProfile, isAuthenticated, isLoading } = useApp();
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isAddKKModalOpen, setIsAddKKModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (!isLoading && (!currentProfile || !isAuthenticated)) {
+      router.replace('/login');
+    }
+  }, [isLoading, currentProfile, isAuthenticated, router]);
+
+  if (isLoading || !currentProfile || !isAuthenticated) {
+    return (
+      <div className="fixed inset-0 h-[100dvh] w-full bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-6 text-center shadow-xl max-w-xs w-full space-y-2">
+          <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center mx-auto animate-pulse">
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <p className="text-xs font-bold text-slate-700">
+            Memverifikasi Sesi & PIN Akses...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const isAdmin = currentProfile?.role === 'admin';
-  // Hide global FAB on /warga, /kk, and /data so it never blocks table pagination or action buttons
   const hideFab =
     pathname.startsWith('/warga') ||
     pathname.startsWith('/kk') ||
-    pathname.startsWith('/data');
+    pathname.startsWith('/data') ||
+    pathname.startsWith('/pengaturan');
 
   return (
     <div className="fixed inset-0 h-[100dvh] w-full bg-slate-900 flex justify-center overflow-hidden">
@@ -47,7 +69,7 @@ export default function MainLayout({
               {isAdmin ? (
                 <button
                   onClick={() => setIsAddKKModalOpen(true)}
-                  className="p-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/40 active:scale-90 transition-all flex items-center justify-center group"
+                  className="p-3 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-lg hover:shadow-sky-500/40 active:scale-90 transition-all flex items-center justify-center group"
                   title="Tambah Kartu Keluarga Baru"
                 >
                   <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
@@ -58,7 +80,7 @@ export default function MainLayout({
               ) : (
                 <button
                   onClick={() => setIsNoteModalOpen(true)}
-                  className="p-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/40 active:scale-90 transition-all flex items-center justify-center group"
+                  className="p-3 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-lg hover:shadow-sky-500/40 active:scale-90 transition-all flex items-center justify-center group"
                   title="Kirim Catatan Data Wilayah"
                 >
                   <MessageSquarePlus className="w-5 h-5 group-hover:scale-110 transition-transform" />

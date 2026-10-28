@@ -27,13 +27,13 @@ export const StatCard: React.FC<StatCardProps> = ({
       bg: 'bg-blue-50/80',
       iconBg: 'bg-blue-500 text-white',
       border: 'border-blue-100 hover:border-blue-300',
-      text: 'text-blue-600',
+      text: 'text-sky-600',
     },
     blue: {
       bg: 'bg-blue-50/80',
-      iconBg: 'bg-blue-600 text-white',
+      iconBg: 'bg-sky-500 text-white',
       border: 'border-blue-100 hover:border-blue-300',
-      text: 'text-blue-600',
+      text: 'text-sky-600',
     },
     emerald: {
       bg: 'bg-emerald-50/80',
