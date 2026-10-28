@@ -10,149 +10,121 @@ export function getCitizenMaritalStatus(citizen: Citizen): MaritalStatus {
 
 export function getFamilyHouseNumber(family?: Family | null): string {
   if (!family) return '-';
-  if (family.no_rumah) return family.no_rumah;
+  if (family.no_rumah && family.no_rumah.trim() !== '') return family.no_rumah.trim();
   const match = family.alamat.match(/No\.?\s*(\d+)/i);
   return match ? match[1] : '01';
 }
 
-// =========================================================================
-// DATA RESMI DESA KARANGHAUR (TERVERIFIKASI)
-// =========================================================================
-export const OFFICIAL_VILLAGE_STATS: Record<string, VillageStats> = {
-  all: {
-    totalRumah: 1217,
-    totalKK: 1480,
-    totalJiwa: 4531,
-    lakiLaki: 2319,
-    perempuan: 2212,
-    wajibKtp: 3322,
-    lansia: 486,
-    bpjsKis: 3557,
-    bpjsMandiri: 521,
-    bpjsNone: 453,
-    bansosBpnt: 211,
-    bansosPkh: 198,
-    bansosKip: 62,
-    bansosBlt: 44,
-    disabilitas: 24,
-    tki: 23,
-    pendingNotes: 8,
-  },
-  'Dusun I': {
-    totalRumah: 515,
-    totalKK: 636,
-    totalJiwa: 2008,
-    lakiLaki: 1046,
-    perempuan: 962,
-    wajibKtp: 1472,
-    lansia: 215,
-    bpjsKis: 1580,
-    bpjsMandiri: 230,
-    bpjsNone: 198,
-    bansosBpnt: 94,
-    bansosPkh: 88,
-    bansosKip: 28,
-    bansosBlt: 20,
-    disabilitas: 11,
-    tki: 10,
-    pendingNotes: 3,
-  },
-  'Dusun II': {
-    totalRumah: 392,
-    totalKK: 440,
-    totalJiwa: 1314,
-    lakiLaki: 650,
-    perempuan: 664,
-    wajibKtp: 964,
-    lansia: 142,
-    bpjsKis: 1032,
-    bpjsMandiri: 151,
-    bpjsNone: 131,
-    bansosBpnt: 61,
-    bansosPkh: 57,
-    bansosKip: 18,
-    bansosBlt: 13,
-    disabilitas: 7,
-    tki: 7,
-    pendingNotes: 3,
-  },
-  'Dusun III': {
-    totalRumah: 310,
-    totalKK: 404,
-    totalJiwa: 1209,
-    lakiLaki: 623,
-    perempuan: 586,
-    wajibKtp: 886,
-    lansia: 129,
-    bpjsKis: 945,
-    bpjsMandiri: 140,
-    bpjsNone: 124,
-    bansosBpnt: 56,
-    bansosPkh: 53,
-    bansosKip: 16,
-    bansosBlt: 11,
-    disabilitas: 6,
-    tki: 6,
-    pendingNotes: 2,
-  },
-};
+export function calculateCitizenAge(dateString: string): number {
+  if (!dateString) return 0;
+  const birth = new Date(dateString);
+  if (isNaN(birth.getTime())) {
+    const yearMatch = String(dateString).match(/^(\d{4})/);
+    if (yearMatch) {
+      return new Date().getFullYear() - parseInt(yearMatch[1], 10);
+    }
+    return 0;
+  }
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age < 0 ? 0 : age;
+}
 
 // =========================================================================
-// DEMO PROFILES (AKUN CONTOH LOGIN CEPAT)
+// DEMO PROFILES (SINKRON 100% DENGAN SUPABASE SCHEMA.SQL)
 // =========================================================================
 export const DEMO_PROFILES: Profile[] = [
   {
-    id: 'user-admin-01',
-    full_name: 'H. Sulaeman, S.IP',
+    id: 'prof-admin',
+    full_name: 'Syahid (Administrator Desa)',
     role: 'admin',
     assigned_dusun: null,
     assigned_rw: null,
     assigned_rt: null,
-    phone: '0812-3456-7890',
+    phone: '0812-9988-7766',
   },
   {
-    id: 'user-kadus-01',
-    full_name: 'Bambang Suherman',
+    id: 'prof-kadus-1',
+    full_name: 'H. Sulaeman (Kepala Dusun I)',
     role: 'kadus',
     assigned_dusun: 'Dusun I',
     assigned_rw: null,
     assigned_rt: null,
-    phone: '0813-9876-5432',
+    phone: '0813-1122-3344',
   },
   {
-    id: 'user-rw-01',
-    full_name: 'Kusnadi',
+    id: 'prof-kadus-2',
+    full_name: 'Bpk. Mastur (Kepala Dusun II)',
+    role: 'kadus',
+    assigned_dusun: 'Dusun II',
+    assigned_rw: null,
+    assigned_rt: null,
+    phone: '0813-2233-4455',
+  },
+  {
+    id: 'prof-kadus-3',
+    full_name: 'Bpk. Jayadi (Kepala Dusun III)',
+    role: 'kadus',
+    assigned_dusun: 'Dusun III',
+    assigned_rw: null,
+    assigned_rt: null,
+    phone: '0813-3344-5566',
+  },
+  {
+    id: 'prof-rw-01',
+    full_name: 'Bpk. Dahlan (Ketua RW 001)',
     role: 'rw',
     assigned_dusun: 'Dusun I',
     assigned_rw: '001',
     assigned_rt: null,
-    phone: '0857-1234-5678',
+    phone: '0857-4455-6677',
   },
   {
-    id: 'user-rt-01',
-    full_name: 'Joko Purwanto',
+    id: 'prof-rw-02',
+    full_name: 'Bpk. Rohmat (Ketua RW 002)',
+    role: 'rw',
+    assigned_dusun: 'Dusun I',
+    assigned_rw: '002',
+    assigned_rt: null,
+    phone: '0857-5566-7788',
+  },
+  {
+    id: 'prof-rt-01',
+    full_name: 'Bpk. Kusnan (Ketua RT 001/001)',
     role: 'rt',
     assigned_dusun: 'Dusun I',
     assigned_rw: '001',
     assigned_rt: '001',
-    phone: '0878-8765-4321',
+    phone: '0896-1234-5678',
   },
   {
-    id: 'user-rt-02',
-    full_name: 'Mulyono',
+    id: 'prof-rt-02',
+    full_name: 'Bpk. Marzuki (Ketua RT 002/001)',
     role: 'rt',
-    assigned_dusun: 'Dusun II',
+    assigned_dusun: 'Dusun I',
+    assigned_rw: '001',
+    assigned_rt: '002',
+    phone: '0896-2345-6789',
+  },
+  {
+    id: 'prof-rt-03',
+    full_name: 'Bpk. Sanwani (Ketua RT 001/002)',
+    role: 'rt',
+    assigned_dusun: 'Dusun I',
     assigned_rw: '002',
     assigned_rt: '001',
-    phone: '0821-4321-8765',
+    phone: '0896-3456-7890',
   },
 ];
 
 // =========================================================================
-// MOCK DATA FAMILIES (KARTU KELUARGA)
+// INITIAL FAMILIES (SINKRON 100% DENGAN SUPABASE SCHEMA.SQL)
 // =========================================================================
 export const INITIAL_FAMILIES: Family[] = [
-  // --- Dusun I, RW 001, RT 001 (Visible to RT 001, RW 001, Kadus I, Admin) ---
   {
     id: 'fam-01',
     no_kk: '3216081203000001',
@@ -179,7 +151,7 @@ export const INITIAL_FAMILIES: Family[] = [
     rw: '001',
     rt: '001',
     status_barcode: true,
-    status_update: false, // Perlu Update
+    status_update: false,
     penerangan: 'meteran',
     fasilitas_mck: 'sendiri',
     bantuan_sosial: 'bpnt',
@@ -194,7 +166,7 @@ export const INITIAL_FAMILIES: Family[] = [
     dusun: 'Dusun I',
     rw: '001',
     rt: '001',
-    status_barcode: false, // Belum Barcode
+    status_barcode: false,
     status_update: false,
     penerangan: 'tetangga',
     fasilitas_mck: 'kelompok',
@@ -217,8 +189,6 @@ export const INITIAL_FAMILIES: Family[] = [
     bantuan_sosial: 'none',
     created_at: '2024-02-10T09:20:00Z',
   },
-
-  // --- Dusun I, RW 001, RT 002 (Visible to RW 001, Kadus I, Admin. Hidden from RT 001) ---
   {
     id: 'fam-05',
     no_kk: '3216081203000005',
@@ -248,37 +218,49 @@ export const INITIAL_FAMILIES: Family[] = [
     status_update: false,
     penerangan: 'meteran',
     fasilitas_mck: 'sendiri',
-    bantuan_sosial: 'bpnt',
+    bantuan_sosial: 'none',
     created_at: '2024-02-15T13:45:00Z',
   },
-
-  // --- Dusun I, RW 001, RT 003 (Visible to RW 001, Kadus I, Admin. Hidden from RT 001) ---
   {
     id: 'fam-07',
     no_kk: '3216081203000007',
-    kepala_keluarga: 'UJANG KURNIA',
-    alamat: 'Jl. Cisadane RT 003 / RW 001',
-    no_rumah: '09',
+    kepala_keluarga: 'ASEP SUNANDAR',
+    alamat: 'Jl. Kali CBL RT 001 / RW 002',
+    no_rumah: '05',
     dusun: 'Dusun I',
-    rw: '001',
-    rt: '003',
+    rw: '002',
+    rt: '001',
     status_barcode: true,
     status_update: true,
     penerangan: 'meteran',
     fasilitas_mck: 'sendiri',
-    bantuan_sosial: 'kip',
-    created_at: '2024-02-22T08:15:00Z',
+    bantuan_sosial: 'bpnt',
+    created_at: '2024-02-18T08:00:00Z',
   },
-
-  // --- Dusun II, RW 002, RT 001 (Visible to RT 001/002, Admin. Hidden from Kadus I & RW 001) ---
   {
     id: 'fam-08',
     no_kk: '3216081203000008',
-    kepala_keluarga: 'MULYONO',
-    alamat: 'Jl. Irigasi Barat RT 001 / RW 002',
+    kepala_keluarga: 'M. TOHIR',
+    alamat: 'Gg. Musholla RT 001 / RW 002',
+    no_rumah: '09',
+    dusun: 'Dusun I',
+    rw: '002',
+    rt: '001',
+    status_barcode: false,
+    status_update: false,
+    penerangan: 'tanpa_meteran',
+    fasilitas_mck: 'umum',
+    bantuan_sosial: 'blt',
+    created_at: '2024-02-20T16:30:00Z',
+  },
+  {
+    id: 'fam-09',
+    no_kk: '3216081203000009',
+    kepala_keluarga: 'H. BADRUDIN',
+    alamat: 'Jl. Raya Karanghaur Dusun II',
     no_rumah: '18',
     dusun: 'Dusun II',
-    rw: '002',
+    rw: '003',
     rt: '001',
     status_barcode: true,
     status_update: true,
@@ -288,58 +270,40 @@ export const INITIAL_FAMILIES: Family[] = [
     created_at: '2024-03-01T10:00:00Z',
   },
   {
-    id: 'fam-09',
-    no_kk: '3216081203000009',
-    kepala_keluarga: 'DEDI ROHAEDI',
-    alamat: 'Gg. Melati RT 001 / RW 002',
-    no_rumah: '05',
-    dusun: 'Dusun II',
-    rw: '002',
-    rt: '001',
-    status_barcode: true,
-    status_update: false,
-    penerangan: 'meteran',
-    fasilitas_mck: 'sendiri',
-    bantuan_sosial: 'blt',
-    created_at: '2024-03-05T14:30:00Z',
-  },
-
-  // --- Dusun III, RW 003, RT 001 (Visible to Admin only) ---
-  {
     id: 'fam-10',
     no_kk: '3216081203000010',
-    kepala_keluarga: 'SUWANDI',
-    alamat: 'Jl. Lingkar Timur RT 001 / RW 003',
-    no_rumah: '31',
+    kepala_keluarga: 'SUKIMAN',
+    alamat: 'Kp. Babakan Dusun III RT 001 / RW 005',
+    no_rumah: '04',
     dusun: 'Dusun III',
-    rw: '003',
+    rw: '005',
     rt: '001',
     status_barcode: true,
     status_update: true,
     penerangan: 'meteran',
     fasilitas_mck: 'sendiri',
-    bantuan_sosial: 'pkh',
-    created_at: '2024-03-10T16:00:00Z',
+    bantuan_sosial: 'kip',
+    created_at: '2024-03-05T11:20:00Z',
   },
 ];
 
 // =========================================================================
-// MOCK DATA CITIZENS (ANGGOTA KELUARGA / NIK)
+// INITIAL CITIZENS (SINKRON 100% DENGAN SUPABASE SCHEMA.SQL)
 // =========================================================================
 export const INITIAL_CITIZENS: Citizen[] = [
-  // --- Fam 01 (SAMSUDIN - RT 001 / RW 001) ---
   {
     id: 'cit-01',
     family_id: 'fam-01',
-    nik: '3216081205780001',
+    nik: '3216081205720001',
     nama_lengkap: 'SAMSUDIN',
     hubungan_keluarga: 'Kepala Keluarga',
     jenis_kelamin: 'L',
     tempat_lahir: 'Bekasi',
-    tanggal_lahir: '1978-05-12',
+    tanggal_lahir: '1972-05-12',
     agama: 'Islam',
-    pendidikan_terakhir: 'SMA / Sederajat',
-    pekerjaan: 'Buruh Harian Lepas',
+    pendidikan_terakhir: 'SMP / Sederajat',
+    pekerjaan: 'Petani / Pekebun',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'kis',
     disabilitas: 'tidak',
     status_tki: false,
@@ -350,15 +314,16 @@ export const INITIAL_CITIZENS: Citizen[] = [
   {
     id: 'cit-02',
     family_id: 'fam-01',
-    nik: '3216085508820002',
-    nama_lengkap: 'SITI AMINAH',
+    nik: '3216085508760002',
+    nama_lengkap: 'ROHAYATI',
     hubungan_keluarga: 'Istri',
     jenis_kelamin: 'P',
     tempat_lahir: 'Bekasi',
-    tanggal_lahir: '1982-08-15',
+    tanggal_lahir: '1976-08-15',
     agama: 'Islam',
-    pendidikan_terakhir: 'SMP / Sederajat',
+    pendidikan_terakhir: 'SD / Sederajat',
     pekerjaan: 'Mengurus Rumah Tangga',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'kis',
     disabilitas: 'tidak',
     status_tki: false,
@@ -369,15 +334,16 @@ export const INITIAL_CITIZENS: Citizen[] = [
   {
     id: 'cit-03',
     family_id: 'fam-01',
-    nik: '3216081402050003',
+    nik: '3216081404020003',
     nama_lengkap: 'RIZKY RAMADHAN',
     hubungan_keluarga: 'Anak',
     jenis_kelamin: 'L',
     tempat_lahir: 'Bekasi',
-    tanggal_lahir: '2005-02-14',
+    tanggal_lahir: '2002-04-14',
     agama: 'Islam',
     pendidikan_terakhir: 'SMA / Sederajat',
     pekerjaan: 'Pelajar / Mahasiswa',
+    status_perkawinan: 'Belum Kawin',
     bpjs_kesehatan: 'kis',
     disabilitas: 'tidak',
     status_tki: false,
@@ -397,6 +363,7 @@ export const INITIAL_CITIZENS: Citizen[] = [
     agama: 'Islam',
     pendidikan_terakhir: 'SD / Sederajat',
     pekerjaan: 'Belum / Tidak Bekerja',
+    status_perkawinan: 'Belum Kawin',
     bpjs_kesehatan: 'kis',
     disabilitas: 'tidak',
     status_tki: false,
@@ -404,8 +371,6 @@ export const INITIAL_CITIZENS: Citizen[] = [
     akta_nikah: false,
     created_at: '2024-01-15T08:30:00Z',
   },
-
-  // --- Fam 02 (ACHMAD SUHANDI - RT 001 / RW 001) ---
   {
     id: 'cit-05',
     family_id: 'fam-02',
@@ -418,6 +383,7 @@ export const INITIAL_CITIZENS: Citizen[] = [
     agama: 'Islam',
     pendidikan_terakhir: 'SMK / Sederajat',
     pekerjaan: 'Karyawan Swasta',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'mandiri',
     disabilitas: 'tidak',
     status_tki: false,
@@ -437,6 +403,7 @@ export const INITIAL_CITIZENS: Citizen[] = [
     agama: 'Islam',
     pendidikan_terakhir: 'D3 Kebidanan',
     pekerjaan: 'Tenaga Kesehatan',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'mandiri',
     disabilitas: 'tidak',
     status_tki: false,
@@ -448,7 +415,7 @@ export const INITIAL_CITIZENS: Citizen[] = [
     id: 'cit-07',
     family_id: 'fam-02',
     nik: '3216080503030003',
-    nama_lengkap: 'DIMAS ARYA PRATAMA',
+    nama_lengkap: 'DIMAS PRASETYO',
     hubungan_keluarga: 'Anak',
     jenis_kelamin: 'L',
     tempat_lahir: 'Bekasi',
@@ -456,6 +423,7 @@ export const INITIAL_CITIZENS: Citizen[] = [
     agama: 'Islam',
     pendidikan_terakhir: 'SMA / Sederajat',
     pekerjaan: 'Karyawan Swasta',
+    status_perkawinan: 'Belum Kawin',
     bpjs_kesehatan: 'mandiri',
     disabilitas: 'tidak',
     status_tki: false,
@@ -463,39 +431,39 @@ export const INITIAL_CITIZENS: Citizen[] = [
     akta_nikah: false,
     created_at: '2024-01-20T10:15:00Z',
   },
-
-  // --- Fam 03 (DEDE SUTISNA - RT 001 / RW 001) ---
   {
     id: 'cit-08',
     family_id: 'fam-03',
-    nik: '3216081010620001',
+    nik: '3216081002680001',
     nama_lengkap: 'DEDE SUTISNA',
     hubungan_keluarga: 'Kepala Keluarga',
     jenis_kelamin: 'L',
     tempat_lahir: 'Bekasi',
-    tanggal_lahir: '1962-10-10', // Lansia (64 thn)
+    tanggal_lahir: '1968-02-10',
     agama: 'Islam',
     pendidikan_terakhir: 'SD / Sederajat',
-    pekerjaan: 'Petani / Pekebun',
+    pekerjaan: 'Buruh Harian Lepas',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'kis',
-    disabilitas: 'daksa ringan',
+    disabilitas: 'tidak',
     status_tki: false,
-    akta_kelahiran: false,
+    akta_kelahiran: true,
     akta_nikah: true,
     created_at: '2024-02-01T14:00:00Z',
   },
   {
     id: 'cit-09',
     family_id: 'fam-03',
-    nik: '3216085112650002',
-    nama_lengkap: 'MAHPUDAH',
+    nik: '3216085106720002',
+    nama_lengkap: 'KARSINAH',
     hubungan_keluarga: 'Istri',
     jenis_kelamin: 'P',
     tempat_lahir: 'Bekasi',
-    tanggal_lahir: '1965-12-11', // Lansia (61 thn)
+    tanggal_lahir: '1972-06-11',
     agama: 'Islam',
-    pendidikan_terakhir: 'SD / Sederajat',
+    pendidikan_terakhir: 'Tidak / Belum Sekolah',
     pekerjaan: 'Mengurus Rumah Tangga',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'kis',
     disabilitas: 'tidak',
     status_tki: false,
@@ -503,20 +471,39 @@ export const INITIAL_CITIZENS: Citizen[] = [
     akta_nikah: true,
     created_at: '2024-02-01T14:00:00Z',
   },
-
-  // --- Fam 04 (H. ENDANG WIJAYA - RT 001 / RW 001) ---
   {
     id: 'cit-10',
+    family_id: 'fam-03',
+    nik: '3216081909060003',
+    nama_lengkap: 'AGUS KURNIAWAN',
+    hubungan_keluarga: 'Anak',
+    jenis_kelamin: 'L',
+    tempat_lahir: 'Bekasi',
+    tanggal_lahir: '2006-09-19',
+    agama: 'Islam',
+    pendidikan_terakhir: 'SMP / Sederajat',
+    pekerjaan: 'Buruh Harian Lepas',
+    status_perkawinan: 'Belum Kawin',
+    bpjs_kesehatan: 'kis',
+    disabilitas: 'tidak',
+    status_tki: false,
+    akta_kelahiran: true,
+    akta_nikah: false,
+    created_at: '2024-02-01T14:00:00Z',
+  },
+  {
+    id: 'cit-11',
     family_id: 'fam-04',
-    nik: '3216081101680001',
+    nik: '3216080101600001',
     nama_lengkap: 'H. ENDANG WIJAYA',
     hubungan_keluarga: 'Kepala Keluarga',
     jenis_kelamin: 'L',
     tempat_lahir: 'Bekasi',
-    tanggal_lahir: '1968-01-11',
+    tanggal_lahir: '1960-01-01',
     agama: 'Islam',
-    pendidikan_terakhir: 'S1 Hukum',
+    pendidikan_terakhir: 'S1 Ekonomi',
     pekerjaan: 'Wiraswasta / Pedagang',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'mandiri',
     disabilitas: 'tidak',
     status_tki: false,
@@ -524,102 +511,159 @@ export const INITIAL_CITIZENS: Citizen[] = [
     akta_nikah: true,
     created_at: '2024-02-10T09:20:00Z',
   },
-
-  // --- Fam 05 (WARSONO - RT 002 / RW 001) ---
   {
-    id: 'cit-11',
-    family_id: 'fam-05',
-    nik: '3216081804790001',
-    nama_lengkap: 'WARSONO',
-    hubungan_keluarga: 'Kepala Keluarga',
-    jenis_kelamin: 'L',
+    id: 'cit-12',
+    family_id: 'fam-04',
+    nik: '3216084803650002',
+    nama_lengkap: 'HJ. SITI KHADIJAH',
+    hubungan_keluarga: 'Istri',
+    jenis_kelamin: 'P',
     tempat_lahir: 'Cirebon',
-    tanggal_lahir: '1979-04-18',
+    tanggal_lahir: '1965-03-08',
     agama: 'Islam',
-    pendidikan_terakhir: 'SMP / Sederajat',
-    pekerjaan: 'Buruh Bangunan',
-    bpjs_kesehatan: 'kis',
+    pendidikan_terakhir: 'SMA / Sederajat',
+    pekerjaan: 'Wiraswasta / Pedagang',
+    status_perkawinan: 'Kawin',
+    bpjs_kesehatan: 'mandiri',
     disabilitas: 'tidak',
     status_tki: false,
     akta_kelahiran: true,
     akta_nikah: true,
-    created_at: '2024-02-12T11:00:00Z',
+    created_at: '2024-02-10T09:20:00Z',
   },
-  {
-    id: 'cit-12',
-    family_id: 'fam-05',
-    nik: '3216085906840002',
-    nama_lengkap: 'TARSIH',
-    hubungan_keluarga: 'Istri',
-    jenis_kelamin: 'P',
-    tempat_lahir: 'Cirebon',
-    tanggal_lahir: '1984-06-19',
-    agama: 'Islam',
-    pendidikan_terakhir: 'SMP / Sederajat',
-    pekerjaan: 'Tenaga Kerja Indonesia (TKI)',
-    bpjs_kesehatan: 'mandiri',
-    disabilitas: 'tidak',
-    status_tki: true, // TKI
-    akta_kelahiran: true,
-    akta_nikah: true,
-    created_at: '2024-02-12T11:00:00Z',
-  },
-
-  // --- Fam 06 (KOSASIH - RT 002 / RW 001) ---
   {
     id: 'cit-13',
+    family_id: 'fam-05',
+    nik: '3216081808800001',
+    nama_lengkap: 'WARSONO',
+    hubungan_keluarga: 'Kepala Keluarga',
+    jenis_kelamin: 'L',
+    tempat_lahir: 'Brebes',
+    tanggal_lahir: '1980-08-18',
+    agama: 'Islam',
+    pendidikan_terakhir: 'SMP / Sederajat',
+    pekerjaan: 'Sopir / Angkutan',
+    status_perkawinan: 'Cerai Hidup',
+    bpjs_kesehatan: 'kis',
+    disabilitas: 'tidak',
+    status_tki: false,
+    akta_kelahiran: true,
+    akta_nikah: false,
+    created_at: '2024-02-12T11:00:00Z',
+  },
+  {
+    id: 'cit-14',
+    family_id: 'fam-05',
+    nik: '3216082212080002',
+    nama_lengkap: 'BAYU PAMUNGKAS',
+    hubungan_keluarga: 'Anak',
+    jenis_kelamin: 'L',
+    tempat_lahir: 'Bekasi',
+    tanggal_lahir: '2008-12-22',
+    agama: 'Islam',
+    pendidikan_terakhir: 'SD / Sederajat',
+    pekerjaan: 'Pelajar / Mahasiswa',
+    status_perkawinan: 'Belum Kawin',
+    bpjs_kesehatan: 'kis',
+    disabilitas: 'tidak',
+    status_tki: false,
+    akta_kelahiran: true,
+    akta_nikah: false,
+    created_at: '2024-02-12T11:00:00Z',
+  },
+  {
+    id: 'cit-15',
     family_id: 'fam-06',
-    nik: '3216080309830001',
+    nik: '3216080709840001',
     nama_lengkap: 'KOSASIH',
     hubungan_keluarga: 'Kepala Keluarga',
     jenis_kelamin: 'L',
     tempat_lahir: 'Bekasi',
-    tanggal_lahir: '1983-09-03',
+    tanggal_lahir: '1984-09-07',
     agama: 'Islam',
     pendidikan_terakhir: 'SMA / Sederajat',
-    pekerjaan: 'Pedagang Keliling',
-    bpjs_kesehatan: 'kis',
+    pekerjaan: 'Tukang Kayu / Bangunan',
+    status_perkawinan: 'Kawin',
+    bpjs_kesehatan: 'tidak',
     disabilitas: 'tidak',
     status_tki: false,
     akta_kelahiran: true,
     akta_nikah: true,
     created_at: '2024-02-15T13:45:00Z',
   },
-
-  // --- Fam 07 (UJANG KURNIA - RT 003 / RW 001) ---
   {
-    id: 'cit-14',
-    family_id: 'fam-07',
-    nik: '3216081708860001',
-    nama_lengkap: 'UJANG KURNIA',
-    hubungan_keluarga: 'Kepala Keluarga',
-    jenis_kelamin: 'L',
-    tempat_lahir: 'Garut',
-    tanggal_lahir: '1986-08-17',
+    id: 'cit-16',
+    family_id: 'fam-06',
+    nik: '3216084405880002',
+    nama_lengkap: 'MIMI AMINAH',
+    hubungan_keluarga: 'Istri',
+    jenis_kelamin: 'P',
+    tempat_lahir: 'Bekasi',
+    tanggal_lahir: '1988-05-04',
     agama: 'Islam',
-    pendidikan_terakhir: 'SMA / Sederajat',
-    pekerjaan: 'Sopir Angkot',
-    bpjs_kesehatan: 'kis',
+    pendidikan_terakhir: 'SMP / Sederajat',
+    pekerjaan: 'Mengurus Rumah Tangga',
+    status_perkawinan: 'Kawin',
+    bpjs_kesehatan: 'tidak',
     disabilitas: 'tidak',
     status_tki: false,
     akta_kelahiran: true,
     akta_nikah: true,
-    created_at: '2024-02-22T08:15:00Z',
+    created_at: '2024-02-15T13:45:00Z',
   },
-
-  // --- Fam 08 (MULYONO - RT 001 / RW 002 / Dusun II) ---
   {
-    id: 'cit-15',
-    family_id: 'fam-08',
-    nik: '3216082202720001',
-    nama_lengkap: 'MULYONO',
+    id: 'cit-17',
+    family_id: 'fam-07',
+    nik: '3216081103790001',
+    nama_lengkap: 'ASEP SUNANDAR',
     hubungan_keluarga: 'Kepala Keluarga',
     jenis_kelamin: 'L',
-    tempat_lahir: 'Kebumen',
-    tanggal_lahir: '1972-02-22',
+    tempat_lahir: 'Bandung',
+    tanggal_lahir: '1979-03-11',
+    agama: 'Islam',
+    pendidikan_terakhir: 'SMK / Sederajat',
+    pekerjaan: 'Karyawan Swasta',
+    status_perkawinan: 'Cerai Mati',
+    bpjs_kesehatan: 'kis',
+    disabilitas: 'tidak',
+    status_tki: false,
+    akta_kelahiran: true,
+    akta_nikah: false,
+    created_at: '2024-02-18T08:00:00Z',
+  },
+  {
+    id: 'cit-18',
+    family_id: 'fam-08',
+    nik: '3216080404550001',
+    nama_lengkap: 'M. TOHIR',
+    hubungan_keluarga: 'Kepala Keluarga',
+    jenis_kelamin: 'L',
+    tempat_lahir: 'Bekasi',
+    tanggal_lahir: '1955-04-04',
+    agama: 'Islam',
+    pendidikan_terakhir: 'SD / Sederajat',
+    pekerjaan: 'Pensiunan / Tidak Bekerja',
+    status_perkawinan: 'Kawin',
+    bpjs_kesehatan: 'kis',
+    disabilitas: 'daksa',
+    status_tki: false,
+    akta_kelahiran: true,
+    akta_nikah: true,
+    created_at: '2024-02-20T16:30:00Z',
+  },
+  {
+    id: 'cit-19',
+    family_id: 'fam-09',
+    nik: '3216081505630001',
+    nama_lengkap: 'H. BADRUDIN',
+    hubungan_keluarga: 'Kepala Keluarga',
+    jenis_kelamin: 'L',
+    tempat_lahir: 'Bekasi',
+    tanggal_lahir: '1963-05-15',
     agama: 'Islam',
     pendidikan_terakhir: 'SMA / Sederajat',
-    pekerjaan: 'Ketua RT / Toko Kelontong',
+    pekerjaan: 'Wiraswasta / Pedagang',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'mandiri',
     disabilitas: 'tidak',
     status_tki: false,
@@ -627,65 +671,43 @@ export const INITIAL_CITIZENS: Citizen[] = [
     akta_nikah: true,
     created_at: '2024-03-01T10:00:00Z',
   },
-
-  // --- Fam 09 (DEDI ROHAEDI - RT 001 / RW 002 / Dusun II) ---
   {
-    id: 'cit-16',
-    family_id: 'fam-09',
-    nik: '3216081912800001',
-    nama_lengkap: 'DEDI ROHAEDI',
+    id: 'cit-20',
+    family_id: 'fam-10',
+    nik: '3216081910810001',
+    nama_lengkap: 'SUKIMAN',
     hubungan_keluarga: 'Kepala Keluarga',
     jenis_kelamin: 'L',
-    tempat_lahir: 'Bekasi',
-    tanggal_lahir: '1980-12-19',
+    tempat_lahir: 'Kebumen',
+    tanggal_lahir: '1981-10-19',
     agama: 'Islam',
     pendidikan_terakhir: 'SMP / Sederajat',
     pekerjaan: 'Buruh Tani',
+    status_perkawinan: 'Kawin',
     bpjs_kesehatan: 'kis',
     disabilitas: 'tidak',
-    status_tki: false,
+    status_tki: true,
     akta_kelahiran: true,
     akta_nikah: true,
-    created_at: '2024-03-05T14:30:00Z',
-  },
-
-  // --- Fam 10 (SUWANDI - RT 001 / RW 003 / Dusun III) ---
-  {
-    id: 'cit-17',
-    family_id: 'fam-10',
-    nik: '3216080101700001',
-    nama_lengkap: 'SUWANDI',
-    hubungan_keluarga: 'Kepala Keluarga',
-    jenis_kelamin: 'L',
-    tempat_lahir: 'Indramayu',
-    tanggal_lahir: '1970-01-01',
-    agama: 'Islam',
-    pendidikan_terakhir: 'SD / Sederajat',
-    pekerjaan: 'Nelayan / Tambak',
-    bpjs_kesehatan: 'kis',
-    disabilitas: 'tidak',
-    status_tki: false,
-    akta_kelahiran: false,
-    akta_nikah: true,
-    created_at: '2024-03-10T16:00:00Z',
+    created_at: '2024-03-05T11:20:00Z',
   },
 ];
 
 // =========================================================================
-// MOCK DATA NOTES (CATATAN DARI RT/RW/KADUS KE ADMIN DESA)
+// INITIAL NOTES (SINKRON 100% DENGAN SUPABASE SCHEMA.SQL)
 // =========================================================================
 export const INITIAL_NOTES: Note[] = [
   {
     id: 'note-01',
     family_id: 'fam-02',
     citizen_id: 'cit-05',
-    author_id: 'user-rt-01',
-    message: 'Anak sulung (Dimas) sudah wisuda dan bekerja di Cikarang. Mohon update status pekerjaan di KK.',
+    author_id: 'prof-rt-01',
+    message: 'Keluarga baru saja memperbarui data kepindahan anak tertua, mohon cetak KK barcode terbaru.',
     status: 'pending',
-    created_at: '2024-03-18T10:30:00Z',
+    created_at: '2024-03-10T09:00:00Z',
     family_no_kk: '3216081203000002',
-    citizen_name: 'DIMAS ARYA PRATAMA',
-    citizen_nik: '3216080503030003',
+    citizen_name: 'ACHMAD SUHANDI',
+    citizen_nik: '3216082407750001',
     dusun: 'Dusun I',
     rw: '001',
     rt: '001',
@@ -693,46 +715,31 @@ export const INITIAL_NOTES: Note[] = [
   {
     id: 'note-02',
     family_id: 'fam-03',
-    citizen_id: 'cit-08',
-    author_id: 'user-rt-01',
-    message: 'Pak Dede Sutisna membutuhkan bantuan kursi roda / alat bantu jalan serta perbaikan meteran listrik mandiri.',
+    citizen_id: null,
+    author_id: 'prof-rt-01',
+    message: 'Keluarga Dede Sutisna memerlukan bantuan renovasi sanitasi MCK dan pemasangan meteran listrik mandiri.',
     status: 'pending',
-    created_at: '2024-03-20T14:15:00Z',
+    created_at: '2024-03-12T14:30:00Z',
     family_no_kk: '3216081203000003',
-    citizen_name: 'DEDE SUTISNA',
-    citizen_nik: '3216081010620001',
+    citizen_name: undefined,
+    citizen_nik: undefined,
     dusun: 'Dusun I',
     rw: '001',
     rt: '001',
   },
   {
     id: 'note-03',
-    family_id: 'fam-05',
-    citizen_id: 'cit-12',
-    author_id: 'user-rw-01',
-    message: 'Ibu Tarsih berstatus TKI di Taiwan, dokumen perpanjangan paspor telah dilaporkan ke pihak desa.',
+    family_id: 'fam-08',
+    citizen_id: 'cit-18',
+    author_id: 'prof-rw-02',
+    message: 'Lansia disabilitas daksa, mohon didaftarkan program bantuan kursi roda dari Dinas Sosial.',
     status: 'reviewed',
-    created_at: '2024-03-21T09:00:00Z',
-    family_no_kk: '3216081203000005',
-    citizen_name: 'TARSIH',
-    citizen_nik: '3216085906840002',
+    created_at: '2024-03-15T11:15:00Z',
+    family_no_kk: '3216081203000008',
+    citizen_name: 'M. TOHIR',
+    citizen_nik: '3216080404550001',
     dusun: 'Dusun I',
-    rw: '001',
-    rt: '002',
-  },
-  {
-    id: 'note-04',
-    family_id: 'fam-01',
-    citizen_id: 'cit-03',
-    author_id: 'user-kadus-01',
-    message: 'Data barcode KK Dusun I sudah dicetak dan didistribusikan ke keluarga Samsudin.',
-    status: 'resolved',
-    created_at: '2024-03-22T16:45:00Z',
-    family_no_kk: '3216081203000001',
-    citizen_name: 'SAMSUDIN',
-    citizen_nik: '3216081205780001',
-    dusun: 'Dusun I',
-    rw: '001',
+    rw: '002',
     rt: '001',
   },
 ];
@@ -775,7 +782,6 @@ export function filterNotesByRole(notes: Note[], profile: Profile | null): Note[
   if (profile.role === 'admin') {
     return notes;
   }
-  // Petugas melihat catatan yang dibuatnya sendiri atau dalam wilayah penugasannya
   return notes.filter((n) => {
     if (n.author_id === profile.id) return true;
     if (profile.role === 'kadus') {
@@ -791,41 +797,19 @@ export function filterNotesByRole(notes: Note[], profile: Profile | null): Note[
   });
 }
 
-// Calculate dynamic stats for the active profile
+// =========================================================================
+// REAL DYNAMIC STATISTICS FOR ALL ROLES (100% SINKRON DENGAN DATABASE)
+// =========================================================================
 export function computeStatsForProfile(
   families: Family[],
   citizens: Citizen[],
   notes: Note[],
   profile: Profile | null
 ): VillageStats {
-  if (!profile) return OFFICIAL_VILLAGE_STATS.all;
-
-  // For Admin or whole Dusun view, we can also integrate official high-level metrics
-  if (profile.role === 'admin') {
-    const pendingNotes = notes.filter((n) => n.status === 'pending').length;
-    return {
-      ...OFFICIAL_VILLAGE_STATS.all,
-      pendingNotes,
-    };
-  }
-
-  if (profile.role === 'kadus' && profile.assigned_dusun && OFFICIAL_VILLAGE_STATS[profile.assigned_dusun]) {
-    const base = OFFICIAL_VILLAGE_STATS[profile.assigned_dusun];
-    const pendingNotes = notes.filter(
-      (n) => n.status === 'pending' && n.dusun === profile.assigned_dusun
-    ).length;
-    return {
-      ...base,
-      pendingNotes,
-    };
-  }
-
-  // For RW and RT, calculate directly based on their filtered data boundary
   const visibleFamilies = filterFamiliesByRole(families, profile);
   const visibleCitizens = filterCitizensByRole(citizens, families, profile);
   const visibleNotes = filterNotesByRole(notes, profile);
 
-  const nowYear = new Date().getFullYear();
   let lakiLaki = 0;
   let perempuan = 0;
   let wajibKtp = 0;
@@ -842,10 +826,9 @@ export function computeStatsForProfile(
 
   for (const c of visibleCitizens) {
     if (c.jenis_kelamin === 'L') lakiLaki++;
-    if (c.jenis_kelamin === 'P') perempuan++;
+    else if (c.jenis_kelamin === 'P') perempuan++;
 
-    const birthYear = parseInt(c.tanggal_lahir.split('-')[0], 10);
-    const age = nowYear - birthYear;
+    const age = calculateCitizenAge(c.tanggal_lahir);
     if (age >= 17) wajibKtp++;
     if (age >= 60) lansia++;
 
@@ -853,19 +836,23 @@ export function computeStatsForProfile(
     else if (c.bpjs_kesehatan === 'mandiri') bpjsMandiri++;
     else bpjsNone++;
 
-    if (c.disabilitas && c.disabilitas !== 'tidak') disabilitas++;
+    if (c.disabilitas && c.disabilitas.toLowerCase() !== 'tidak') disabilitas++;
     if (c.status_tki) tki++;
   }
 
+  const uniqueHouses = new Set<string>();
   for (const f of visibleFamilies) {
+    const houseNo = getFamilyHouseNumber(f);
+    uniqueHouses.add(`${f.dusun}|${f.rw}|${f.rt}|${houseNo}`);
+
     if (f.bantuan_sosial === 'bpnt') bansosBpnt++;
-    if (f.bantuan_sosial === 'pkh') bansosPkh++;
-    if (f.bantuan_sosial === 'kip') bansosKip++;
-    if (f.bantuan_sosial === 'blt') bansosBlt++;
+    else if (f.bantuan_sosial === 'pkh') bansosPkh++;
+    else if (f.bantuan_sosial === 'kip') bansosKip++;
+    else if (f.bantuan_sosial === 'blt') bansosBlt++;
   }
 
   return {
-    totalRumah: Math.round(visibleFamilies.length * 0.85) || visibleFamilies.length,
+    totalRumah: uniqueHouses.size,
     totalKK: visibleFamilies.length,
     totalJiwa: visibleCitizens.length,
     lakiLaki,

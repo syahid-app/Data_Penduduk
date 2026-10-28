@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Family } from '@/lib/types';
 import { useApp } from '@/lib/context';
+import { getFamilyHouseNumber } from '@/lib/mockData';
 import {
   FileText,
   MapPin,
@@ -16,7 +17,6 @@ import {
   Droplet,
   HeartHandshake,
   MessageSquarePlus,
-  ShieldAlert,
 } from 'lucide-react';
 
 interface KKCardProps {
@@ -25,11 +25,10 @@ interface KKCardProps {
 }
 
 export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
-  const { getCitizensByFamilyId, currentProfile } = useApp();
+  const { getCitizensByFamilyId } = useApp();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const members = getCitizensByFamilyId(family.id);
-  const isAdmin = currentProfile?.role === 'admin';
 
   const bansosColors: Record<string, string> = {
     pkh: 'bg-emerald-100 text-emerald-800 border-emerald-200',
@@ -40,17 +39,17 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-all overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden">
       {/* Top Bar with KK Number & Barcode Tag */}
-      <div className="px-4 py-3 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <FileText className="w-4 h-4 text-orange-600 flex-shrink-0" />
+      <div className="px-3.5 py-2.5 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between flex-wrap gap-1.5">
+        <div className="flex items-center space-x-1.5">
+          <FileText className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
           <span className="font-mono text-xs font-bold text-slate-800">
             {family.no_kk}
           </span>
         </div>
 
-        <div className="flex items-center space-x-1.5">
+        <div className="flex items-center flex-wrap gap-1">
           {family.status_barcode ? (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
               <QrCode className="w-2.5 h-2.5 mr-1" />
@@ -69,7 +68,7 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
               Valid
             </span>
           ) : (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
               Update
             </span>
           )}
@@ -77,26 +76,26 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
       </div>
 
       {/* Main Family Info */}
-      <div className="p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h4 className="text-sm font-bold text-slate-900 uppercase">
+      <div className="p-3.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-bold text-slate-900 uppercase break-words leading-snug">
               {family.kepala_keluarga}
             </h4>
-            <div className="flex items-center text-xs text-slate-500 mt-0.5">
-              <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" />
-              <span>
-                RT {family.rt} / RW {family.rw} • Rumah No. {family.no_rumah || (family.alamat.match(/No\.?\s*(\d+)/i)?.[1]) || '01'} • {family.dusun}
+            <div className="flex items-start text-xs text-slate-600 mt-1">
+              <MapPin className="w-3.5 h-3.5 mr-1 text-orange-500 flex-shrink-0 mt-0.5" />
+              <span className="leading-snug">
+                RT {family.rt} / RW {family.rw} • Rumah No. {getFamilyHouseNumber(family)} • {family.dusun}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1 italic">
+            <p className="text-xs text-slate-500 mt-0.5 italic leading-snug break-words">
               {family.alamat}
             </p>
           </div>
 
           <Link
             href={`/kk/${family.id}`}
-            className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 transition-colors flex-shrink-0"
+            className="p-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-600 transition-colors flex-shrink-0"
             title="Lihat Detail Kartu Keluarga"
           >
             <ChevronRight className="w-4 h-4" />
@@ -104,7 +103,7 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
         </div>
 
         {/* Tags / Indicators: Bansos, MCK, Listrik */}
-        <div className="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+        <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
           <span
             className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
               bansosColors[family.bantuan_sosial] || bansosColors.none
@@ -133,12 +132,12 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
         </div>
 
         {/* Quick Toggle Accordion for Family Members */}
-        <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-1 focus:outline-none"
           >
-            <span>{isExpanded ? 'Sembunyikan Anggota' : 'Daftar Anggota Keluarga'}</span>
+            <span>{isExpanded ? 'Sembunyikan Anggota' : 'Lihat Anggota Keluarga'}</span>
             <ChevronRight
               className={`w-3.5 h-3.5 transition-transform ${
                 isExpanded ? 'rotate-90' : ''
@@ -146,13 +145,12 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
             />
           </button>
 
-          {/* Note submission shortcut for RT/RW/Kadus */}
           {onOpenNoteModal && (
             <button
               onClick={() => onOpenNoteModal(family)}
-              className="inline-flex items-center text-xs font-semibold text-slate-700 hover:text-orange-600 bg-slate-100 hover:bg-orange-50 px-2.5 py-1 rounded-lg transition-colors border border-slate-200"
+              className="inline-flex items-center text-[11px] font-semibold text-slate-700 hover:text-orange-600 bg-slate-100 hover:bg-orange-50 px-2.5 py-1 rounded-lg transition-colors border border-slate-200 flex-shrink-0"
             >
-              <MessageSquarePlus className="w-3.5 h-3.5 mr-1 text-orange-600" />
+              <MessageSquarePlus className="w-3 h-3 mr-1 text-orange-600" />
               Catat KK
             </button>
           )}
@@ -160,28 +158,28 @@ export const KKCard: React.FC<KKCardProps> = ({ family, onOpenNoteModal }) => {
 
         {/* Expanded Members List */}
         {isExpanded && (
-          <div className="mt-3 space-y-1.5 pt-2 border-t border-dashed border-slate-200 animate-slide-up">
+          <div className="mt-2.5 space-y-1.5 pt-2 border-t border-dashed border-slate-200 animate-slide-up">
             {members.length === 0 ? (
               <p className="text-xs text-slate-400 py-1">Belum ada anggota terdaftar</p>
             ) : (
               members.map((m, idx) => (
                 <div
                   key={m.id}
-                  className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs"
+                  className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start justify-between gap-2 text-xs"
                 >
-                  <div className="min-w-0 pr-2">
-                    <div className="flex items-center gap-1.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center flex-wrap gap-1.5">
                       <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                         {idx + 1}
                       </span>
-                      <span className="font-semibold text-slate-800 truncate">
+                      <span className="font-bold text-slate-800 break-words">
                         {m.nama_lengkap}
                       </span>
                       <span className="text-[10px] text-slate-500">
                         ({m.jenis_kelamin})
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 ml-5 font-mono truncate">
+                    <div className="text-[11px] text-slate-500 ml-5 font-mono break-all mt-0.5">
                       NIK: {m.nik} • {m.hubungan_keluarga}
                     </div>
                   </div>

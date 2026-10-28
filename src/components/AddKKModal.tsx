@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/lib/context';
 import { Family, PeneranganType, MckType, BansosType } from '@/lib/types';
-import { PlusCircle, X, CheckCircle, AlertCircle, Save } from 'lucide-react';
+import { PlusCircle, X, AlertCircle, Save } from 'lucide-react';
 
 interface AddKKModalProps {
   isOpen: boolean;
@@ -18,21 +18,54 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
 }) => {
   const { addFamily, updateFamily } = useApp();
 
-  const [noKK, setNoKK] = useState(editFamily?.no_kk || '');
-  const [kepalaKeluarga, setKepalaKeluarga] = useState(editFamily?.kepala_keluarga || '');
-  const [alamat, setAlamat] = useState(editFamily?.alamat || '');
-  const [noRumah, setNoRumah] = useState(editFamily?.no_rumah || '');
-  const [dusun, setDusun] = useState(editFamily?.dusun || 'Dusun I');
-  const [rw, setRw] = useState(editFamily?.rw || '001');
-  const [rt, setRt] = useState(editFamily?.rt || '001');
-  const [statusBarcode, setStatusBarcode] = useState(editFamily ? editFamily.status_barcode : true);
-  const [statusUpdate, setStatusUpdate] = useState(editFamily ? editFamily.status_update : true);
-  const [penerangan, setPenerangan] = useState<PeneranganType>(editFamily?.penerangan || 'meteran');
-  const [fasilitasMck, setFasilitasMck] = useState<MckType>(editFamily?.fasilitas_mck || 'sendiri');
-  const [bantuanSosial, setBantuanSosial] = useState<BansosType>(editFamily?.bantuan_sosial || 'none');
+  const [noKK, setNoKK] = useState('');
+  const [kepalaKeluarga, setKepalaKeluarga] = useState('');
+  const [alamat, setAlamat] = useState('');
+  const [noRumah, setNoRumah] = useState('');
+  const [dusun, setDusun] = useState('Dusun I');
+  const [rw, setRw] = useState('001');
+  const [rt, setRt] = useState('001');
+  const [statusBarcode, setStatusBarcode] = useState(true);
+  const [statusUpdate, setStatusUpdate] = useState(true);
+  const [penerangan, setPenerangan] = useState<PeneranganType>('meteran');
+  const [fasilitasMck, setFasilitasMck] = useState<MckType>('sendiri');
+  const [bantuanSosial, setBantuanSosial] = useState<BansosType>('none');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setError(null);
+      if (editFamily) {
+        setNoKK(editFamily.no_kk || '');
+        setKepalaKeluarga(editFamily.kepala_keluarga || '');
+        setAlamat(editFamily.alamat || '');
+        setNoRumah(editFamily.no_rumah || '');
+        setDusun(editFamily.dusun || 'Dusun I');
+        setRw(editFamily.rw || '001');
+        setRt(editFamily.rt || '001');
+        setStatusBarcode(editFamily.status_barcode);
+        setStatusUpdate(editFamily.status_update);
+        setPenerangan(editFamily.penerangan || 'meteran');
+        setFasilitasMck(editFamily.fasilitas_mck || 'sendiri');
+        setBantuanSosial(editFamily.bantuan_sosial || 'none');
+      } else {
+        setNoKK('');
+        setKepalaKeluarga('');
+        setAlamat('');
+        setNoRumah('');
+        setDusun('Dusun I');
+        setRw('001');
+        setRt('001');
+        setStatusBarcode(true);
+        setStatusUpdate(true);
+        setPenerangan('meteran');
+        setFasilitasMck('sendiri');
+        setBantuanSosial('none');
+      }
+    }
+  }, [editFamily, isOpen]);
 
   if (!isOpen) return null;
 
@@ -50,66 +83,47 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
     setIsSubmitting(true);
     setError(null);
 
-    if (editFamily) {
-      const res = await updateFamily(editFamily.id, {
-        no_kk: noKK,
-        kepala_keluarga: kepalaKeluarga.toUpperCase(),
-        alamat,
-        no_rumah: noRumah || (alamat.match(/No\.?\s*(\d+)/i)?.[1] || '01'),
-        dusun,
-        rw,
-        rt,
-        status_barcode: statusBarcode,
-        status_update: statusUpdate,
-        penerangan,
-        fasilitas_mck: fasilitasMck,
-        bantuan_sosial: bantuanSosial,
-      });
+    const payload = {
+      no_kk: noKK,
+      kepala_keluarga: kepalaKeluarga.trim().toUpperCase(),
+      alamat: alamat.trim(),
+      no_rumah: noRumah.trim() || alamat.match(/No\.?\s*(\d+)/i)?.[1] || '01',
+      dusun,
+      rw,
+      rt,
+      status_barcode: statusBarcode,
+      status_update: statusUpdate,
+      penerangan,
+      fasilitas_mck: fasilitasMck,
+      bantuan_sosial: bantuanSosial,
+    };
 
-      setIsSubmitting(false);
-      if (res.success) {
-        onClose();
-      } else {
-        setError(res.error || 'Gagal mengubah data KK');
-      }
+    const res = editFamily
+      ? await updateFamily(editFamily.id, payload)
+      : await addFamily(payload);
+
+    setIsSubmitting(false);
+    if (res.success) {
+      onClose();
     } else {
-      const res = await addFamily({
-        no_kk: noKK,
-        kepala_keluarga: kepalaKeluarga.toUpperCase(),
-        alamat,
-        no_rumah: noRumah || (alamat.match(/No\.?\s*(\d+)/i)?.[1] || '01'),
-        dusun,
-        rw,
-        rt,
-        status_barcode: statusBarcode,
-        status_update: statusUpdate,
-        penerangan,
-        fasilitas_mck: fasilitasMck,
-        bantuan_sosial: bantuanSosial,
-      });
-
-      setIsSubmitting(false);
-      if (res.success) {
-        onClose();
-      } else {
-        setError(res.error || 'Gagal menambahkan KK baru');
-      }
+      setError(res.error || 'Gagal menyimpan data KK');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 animate-fade-in">
-      <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-slide-up">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
+      <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 max-h-[90dvh] flex flex-col overflow-hidden animate-slide-up">
+        {/* Fixed Modal Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 flex-shrink-0 bg-white">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
               <PlusCircle className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">
+              <h3 className="text-sm font-bold text-slate-800">
                 {editFamily ? 'Edit Kartu Keluarga' : 'Tambah Kartu Keluarga Baru'}
               </h3>
-              <p className="text-xs text-slate-500">Khusus Otoritas Admin Desa Karanghaur</p>
+              <p className="text-[11px] text-slate-500">Sinkron otomatis dengan Supabase Cloud</p>
             </div>
           </div>
           <button
@@ -120,14 +134,15 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
           </button>
         </div>
 
-        {error && (
-          <div className="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center space-x-2 text-xs">
-            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        {/* Scrollable Modal Body */}
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center space-x-2 text-xs">
+              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
               Nomor Kartu Keluarga (16 Digit)
@@ -138,7 +153,7 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
               value={noKK}
               onChange={(e) => setNoKK(e.target.value.replace(/\D/g, ''))}
               placeholder="3216081203000..."
-              className="w-full p-2.5 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
+              className="w-full p-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
               required
             />
           </div>
@@ -152,7 +167,7 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
               value={kepalaKeluarga}
               onChange={(e) => setKepalaKeluarga(e.target.value)}
               placeholder="SAMSUDIN"
-              className="w-full p-2.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none uppercase"
+              className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none uppercase"
               required
             />
           </div>
@@ -181,6 +196,8 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
                 <option value="001">001</option>
                 <option value="002">002</option>
                 <option value="003">003</option>
+                <option value="004">004</option>
+                <option value="005">005</option>
               </select>
             </div>
 
@@ -194,6 +211,8 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
                 <option value="001">001</option>
                 <option value="002">002</option>
                 <option value="003">003</option>
+                <option value="004">004</option>
+                <option value="005">005</option>
               </select>
             </div>
           </div>
@@ -208,7 +227,7 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
                 value={alamat}
                 onChange={(e) => setAlamat(e.target.value)}
                 placeholder="Jl. Lapangan Desa"
-                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
                 required
               />
             </div>
@@ -220,8 +239,8 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
                 type="text"
                 value={noRumah}
                 onChange={(e) => setNoRumah(e.target.value)}
-                placeholder="12"
-                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
+                placeholder="01"
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-orange-500 outline-none"
               />
             </div>
           </div>
@@ -282,6 +301,18 @@ export const AddKKModal: React.FC<AddKKModalProps> = ({
                 <option value="false">Belum Barcode (Manual)</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Status Validasi Data</label>
+            <select
+              value={statusUpdate ? 'true' : 'false'}
+              onChange={(e) => setStatusUpdate(e.target.value === 'true')}
+              className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none"
+            >
+              <option value="true">Valid / Sudah Update</option>
+              <option value="false">Perlu Update Data</option>
+            </select>
           </div>
 
           <div className="pt-2 flex items-center space-x-2">

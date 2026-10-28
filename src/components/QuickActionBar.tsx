@@ -7,7 +7,6 @@ import {
   FolderTree,
   HeartHandshake,
   Users,
-  ShieldAlert,
   MessageSquarePlus,
   PlusCircle,
   FileSpreadsheet,
@@ -44,7 +43,7 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
       color: 'bg-emerald-500 text-white',
     },
     {
-      label: 'Daftar Warga',
+      label: 'Tabel Warga',
       icon: Users,
       href: '/warga',
       color: 'bg-indigo-500 text-white',
@@ -64,15 +63,15 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-xs">
-      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+    <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-sm">
+      <div className="flex items-center justify-between gap-2 pb-2 mb-2.5 border-b border-slate-100">
         <span className="text-xs font-bold text-slate-800 tracking-tight">
           Aksi Cepat Menu Wilayah
         </span>
         {isAdmin && onOpenAddKKModal && (
           <button
             onClick={onOpenAddKKModal}
-            className="inline-flex items-center text-[11px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-0.5 rounded-full transition-colors"
+            className="inline-flex items-center text-[10px] sm:text-[11px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-0.5 rounded-full transition-colors flex-shrink-0"
           >
             <PlusCircle className="w-3 h-3 mr-1" />
             Tambah KK Baru
@@ -80,7 +79,8 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
         )}
       </div>
 
-      <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar py-1">
+      {/* Responsive 3x2 grid on phones, 6x1 on tablet/desktop so nothing is cut off */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
         {actions.map((act, index) => {
           const Icon = act.icon;
           if (act.href) {
@@ -88,14 +88,14 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
               <Link
                 key={index}
                 href={act.href}
-                className="flex flex-col items-center flex-shrink-0 group focus:outline-none"
+                className="flex flex-col items-center justify-center p-1.5 rounded-xl hover:bg-slate-50 group focus:outline-none transition-colors"
               >
                 <div
-                  className={`w-11 h-11 rounded-2xl ${act.color} flex items-center justify-center shadow-xs group-hover:scale-105 active:scale-95 transition-all`}
+                  className={`w-10 h-10 rounded-2xl ${act.color} flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all`}
                 >
-                  <Icon className="w-5 h-5 stroke-[2.2]" />
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
                 </div>
-                <span className="text-[10px] font-semibold text-slate-700 mt-1.5 text-center truncate max-w-[64px]">
+                <span className="text-[10px] font-semibold text-slate-700 mt-1 text-center leading-tight">
                   {act.label}
                 </span>
               </Link>
@@ -106,14 +106,14 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
             <button
               key={index}
               onClick={act.onClick}
-              className="flex flex-col items-center flex-shrink-0 group focus:outline-none"
+              className="flex flex-col items-center justify-center p-1.5 rounded-xl hover:bg-slate-50 group focus:outline-none transition-colors"
             >
               <div
-                className={`w-11 h-11 rounded-2xl ${act.color} flex items-center justify-center shadow-xs group-hover:scale-105 active:scale-95 transition-all`}
+                className={`w-10 h-10 rounded-2xl ${act.color} flex items-center justify-center shadow-sm group-hover:scale-105 active:scale-95 transition-all`}
               >
-                <Icon className="w-5 h-5 stroke-[2.2]" />
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
               </div>
-              <span className="text-[10px] font-semibold text-slate-700 mt-1.5 text-center truncate max-w-[64px]">
+              <span className="text-[10px] font-semibold text-slate-700 mt-1 text-center leading-tight">
                 {act.label}
               </span>
             </button>

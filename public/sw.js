@@ -1,4 +1,4 @@
-const CACHE_NAME = 'desa-karanghaur-v2';
+const CACHE_NAME = 'desa-karanghaur-v4';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192.png',
@@ -8,9 +8,7 @@ const STATIC_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn('Pre-cache partial failure', err);
-      });
+      return cache.addAll(STATIC_ASSETS).catch(() => {});
     })
   );
   self.skipWaiting();
@@ -22,7 +20,6 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log('Deleting old SW cache:', key);
             return caches.delete(key);
           }
         })
@@ -36,19 +33,22 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // NEVER cache API routes or dynamic downloads
-  if (url.pathname.startsWith('/api/')) {
+  // Only handle static PWA assets from cache-first; let Next.js & browser handle pages/RSC/API directly
+  if (
+    url.origin !== self.location.origin ||
+    !STATIC_ASSETS.includes(url.pathname)
+  ) {
     return;
   }
 
-  // Network first for all navigation and assets
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).catch(() => {
+        return new Response('', { status: 404, statusText: 'Not Found' });
+      });
+    })
   );
 });

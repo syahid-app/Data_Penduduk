@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { INITIAL_FAMILIES, INITIAL_CITIZENS } from '@/lib/mockData';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { Family, Citizen } from '@/lib/types';
 import {
   prepareSpreadsheetRows,
   SPREADSHEET_COLUMNS,
@@ -19,8 +21,25 @@ export async function GET(request: NextRequest) {
     const rw = searchParams.get('rw');
     const rt = searchParams.get('rt');
 
+    let sourceFamilies: Family[] = [...INITIAL_FAMILIES];
+    let sourceCitizens: Citizen[] = [...INITIAL_CITIZENS];
+
+    // Fetch live data from Supabase if configured
+    if (isSupabaseConfigured && supabase) {
+      const [famRes, citRes] = await Promise.all([
+        supabase.from('families').select('*').order('created_at', { ascending: false }),
+        supabase.from('citizens').select('*').order('created_at', { ascending: false }),
+      ]);
+      if (!famRes.error && famRes.data && famRes.data.length > 0) {
+        sourceFamilies = famRes.data;
+      }
+      if (!citRes.error && citRes.data && citRes.data.length > 0) {
+        sourceCitizens = citRes.data;
+      }
+    }
+
     // Filter families based on scope
-    let families = [...INITIAL_FAMILIES];
+    let families = [...sourceFamilies];
     if (scope === 'dusun' && dusun) {
       families = families.filter((f) => f.dusun === dusun);
     } else if (scope === 'rw' && rw) {
@@ -30,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     const familyIds = new Set(families.map((f) => f.id));
-    const citizens = INITIAL_CITIZENS.filter((c) => familyIds.has(c.family_id));
+    const citizens = sourceCitizens.filter((c) => familyIds.has(c.family_id));
 
     // Prepare rows with: 1. Nomor Urut, 2. Nomor Rumah, 3. Nomor Urut KK, full gender Laki-laki / Perempuan
     const rows = prepareSpreadsheetRows(citizens, families);

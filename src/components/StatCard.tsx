@@ -66,38 +66,38 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-xl p-3.5 border ${currentScheme.border} shadow-xs hover:shadow-md transition-all relative flex flex-col justify-between ${
+      className={`bg-white rounded-xl p-3 border ${currentScheme.border} shadow-sm hover:shadow-md transition-all relative flex flex-col justify-between ${
         onClick ? 'cursor-pointer active:scale-[0.98]' : ''
       }`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-2">
-          <div className={`w-8 h-8 rounded-lg ${currentScheme.iconBg} flex items-center justify-center shadow-xs`}>
-            <Icon className="w-4 h-4" />
+      <div className="flex items-start justify-between gap-1.5">
+        <div className="flex items-center space-x-1.5 min-w-0">
+          <div className={`w-7 h-7 rounded-lg ${currentScheme.iconBg} flex items-center justify-center shadow-sm flex-shrink-0`}>
+            <Icon className="w-3.5 h-3.5" />
           </div>
-          <span className="text-xs font-semibold text-slate-600 tracking-tight leading-tight line-clamp-1">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-700 tracking-tight leading-snug break-words">
             {title}
           </span>
         </div>
         {badge && (
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 whitespace-nowrap flex-shrink-0">
             {badge}
           </span>
         )}
       </div>
 
-      <div className="mt-2.5">
+      <div className="mt-2">
         <div className="flex items-baseline justify-between">
-          <span className="text-xl font-extrabold text-slate-900 tracking-tight">
+          <span className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
             {typeof value === 'number' ? value.toLocaleString('id-ID') : value}
           </span>
           {onClick && (
-            <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700" />
+            <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700 flex-shrink-0" />
           )}
         </div>
 
         {subtitle && (
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5 truncate">
+          <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5 leading-snug break-words">
             {subtitle}
           </p>
         )}
