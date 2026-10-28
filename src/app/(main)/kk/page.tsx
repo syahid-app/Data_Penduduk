@@ -321,7 +321,7 @@ function KKListContent() {
       </div>
 
       {/* ===================================================================== */}
-      {/* FULL-HEIGHT SCROLLABLE TABLE AREA (Hanya Nama Kepala Keluarga & Aksi) */}
+      {/* FULL-HEIGHT SCROLLABLE TABLE AREA (Seperti Tabel Warga)               */}
       {/* ===================================================================== */}
       <div className="flex-1 min-h-0 px-3.5 sm:px-5 py-2.5 flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
@@ -332,8 +332,27 @@ function KKListContent() {
                   <th className="py-2 px-2.5 text-center w-9 whitespace-nowrap">
                     No
                   </th>
-                  <th className="py-2 px-2.5">Nama Kepala Keluarga</th>
-                  <th className="py-2 px-2.5 text-right whitespace-nowrap w-24">
+                  <th className="py-2 px-2.5 whitespace-nowrap">
+                    Nama Kepala Keluarga
+                  </th>
+                  <th className="py-2 px-2.5 text-center whitespace-nowrap">
+                    Anggota
+                  </th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">No. KK</th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">
+                    Rumah & Wilayah
+                  </th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">Alamat</th>
+                  <th className="py-2 px-2.5 text-center whitespace-nowrap">
+                    Status KK
+                  </th>
+                  <th className="py-2 px-2.5 text-center whitespace-nowrap">
+                    Bansos
+                  </th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">
+                    PLN & MCK
+                  </th>
+                  <th className="py-2 px-2.5 text-center whitespace-nowrap sm:sticky sm:right-0 bg-slate-100 sm:shadow-[-1px_0_0_rgba(226,232,240,1)]">
                     Aksi
                   </th>
                 </tr>
@@ -341,7 +360,7 @@ function KKListContent() {
               <tbody className="divide-y divide-slate-100">
                 {paginatedFamilies.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-12 px-4 text-center">
+                    <td colSpan={10} className="py-12 px-4 text-center">
                       <FileSpreadsheet className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
                       <p className="text-xs font-bold text-slate-700">
                         Data KK tidak ditemukan
@@ -366,6 +385,14 @@ function KKListContent() {
                       pageSize === 0
                         ? idx + 1
                         : (safePage - 1) * pageSize + idx + 1;
+                    const members = getCitizensByFamilyId(family.id);
+                    const maleCount = members.filter(
+                      (m) => m.jenis_kelamin === 'L'
+                    ).length;
+                    const femaleCount = members.filter(
+                      (m) => m.jenis_kelamin === 'P'
+                    ).length;
+                    const houseNo = getFamilyHouseNumber(family);
 
                     return (
                       <tr
@@ -374,28 +401,172 @@ function KKListContent() {
                         className="even:bg-slate-50/50 hover:bg-orange-50/60 cursor-pointer transition-colors group"
                       >
                         {/* 1. No */}
-                        <td className="py-2 px-2.5 text-center font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                        <td className="py-1.5 px-2.5 text-center font-mono text-[10px] text-slate-400 whitespace-nowrap">
                           {rowNumber}
                         </td>
 
-                        {/* 2. Nama Kepala Keluarga */}
-                        <td className="py-2 px-2.5 font-extrabold text-slate-900 uppercase break-words">
-                          {family.kepala_keluarga}
+                        {/* 2. Nama Kepala Keluarga + Badge Jumlah Anggota di sampingnya */}
+                        <td className="py-1.5 px-2.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-slate-900 uppercase">
+                              {family.kepala_keluarga}
+                            </span>
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                              <Users className="w-2.5 h-2.5" />
+                              {members.length} Jiwa
+                            </span>
+                          </div>
                         </td>
 
-                        {/* 3. Tombol Detail */}
+                        {/* 3. Detail Jumlah Anggota (L/P) */}
+                        <td className="py-1.5 px-2.5 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            <span className="font-bold text-slate-800">
+                              {members.length} Anggota
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              ({maleCount}L / {femaleCount}P)
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 4. Nomor KK */}
+                        <td className="py-1.5 px-2.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono font-bold text-slate-800 tracking-tight">
+                              {family.no_kk}
+                            </span>
+                            <button
+                              onClick={(e) => handleCopyNoKK(family.no_kk, e)}
+                              className="p-0.5 text-slate-400 hover:text-orange-600 rounded"
+                              title="Salin No. KK"
+                            >
+                              {copiedNoKK === family.no_kk ? (
+                                <Check className="w-3 h-3 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-2.5 h-2.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* 5. Rumah & Wilayah */}
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-slate-700">
+                          <span className="font-semibold text-slate-800">
+                            No.{houseNo}
+                          </span>
+                          <span className="text-[10px] text-slate-500 ml-1">
+                            • RT {family.rt}/{family.rw} ({family.dusun})
+                          </span>
+                        </td>
+
+                        {/* 6. Alamat */}
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-slate-600">
+                          {family.alamat}
+                        </td>
+
+                        {/* 7. Status KK (Barcode & Verifikasi) */}
+                        <td className="py-1.5 px-2.5 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            {family.status_barcode ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Barcode
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                Non-Barcode
+                              </span>
+                            )}
+                            {family.status_update ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                Valid
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                Update
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 8. Bansos */}
+                        <td className="py-1.5 px-2.5 text-center whitespace-nowrap">
+                          {family.bantuan_sosial !== 'none' ? (
+                            <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-50 text-purple-700 border border-purple-200">
+                              {family.bantuan_sosial}
+                            </span>
+                          ) : (
+                            <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                              Non-Bansos
+                            </span>
+                          )}
+                        </td>
+
+                        {/* 9. PLN & MCK */}
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-[10px] text-slate-600">
+                          <span className="font-semibold text-slate-700">
+                            PLN: {family.penerangan}
+                          </span>
+                          <span className="text-slate-400 mx-1">•</span>
+                          <span>MCK: {family.fasilitas_mck}</span>
+                        </td>
+
+                        {/* 10. Aksi */}
                         <td
-                          className="py-1.5 px-2.5 text-right whitespace-nowrap"
+                          className="py-1 px-2 text-center whitespace-nowrap sm:sticky sm:right-0 bg-white group-even:bg-slate-50 group-hover:bg-orange-50/90 sm:shadow-[-1px_0_0_rgba(241,245,249,1)]"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
-                            onClick={() => setSelectedFamilyForDetail(family)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-50 hover:bg-orange-600 text-orange-700 hover:text-white border border-orange-200 transition-colors shadow-sm"
-                            title="Lihat Detail Lengkap KK"
-                          >
-                            <Eye className="w-3 h-3" />
-                            <span>Detail</span>
-                          </button>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => setSelectedFamilyForDetail(family)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-800 text-slate-700 hover:text-white border border-slate-200 transition-colors"
+                              title="Lihat Detail Lengkap KK"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Detail</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedFamilyForNote(family);
+                                setIsNoteModalOpen(true);
+                              }}
+                              className="p-1 text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-600 rounded border border-orange-200 transition-colors"
+                              title="Kirim Catatan KK"
+                            >
+                              <MessageSquarePlus className="w-3 h-3" />
+                            </button>
+
+                            {isAdmin && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setEditingFamily(family);
+                                    setIsAddKKModalOpen(true);
+                                  }}
+                                  className="p-1 text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded border border-blue-200 transition-colors"
+                                  title="Edit KK"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (
+                                      confirm(
+                                        `Hapus Kartu Keluarga ${family.kepala_keluarga} (No KK: ${family.no_kk}) beserta seluruh anggotanya?`
+                                      )
+                                    ) {
+                                      deleteFamily(family.id);
+                                    }
+                                  }}
+                                  className="p-1 text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 rounded border border-rose-200 transition-colors"
+                                  title="Hapus KK"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
