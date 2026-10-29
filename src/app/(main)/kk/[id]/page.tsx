@@ -8,7 +8,14 @@ import { NoteModal } from '@/components/NoteModal';
 import { AddKKModal } from '@/components/AddKKModal';
 import { CitizenFormModal } from '@/components/CitizenFormModal';
 import { Citizen } from '@/lib/types';
-import { getCitizenMaritalStatus, getFamilyHouseNumber, calculateCitizenAge } from '@/lib/mockData';
+import {
+  getCitizenMaritalStatus,
+  getFamilyHouseNumber,
+  calculateCitizenAge,
+  getCitizenBloodType,
+  getCitizenMarriageDate,
+  getCitizenParents,
+} from '@/lib/mockData';
 import {
   ArrowLeft,
   QrCode,
@@ -248,9 +255,11 @@ export default function KKDetailPage() {
                   <th className="py-2 px-2.5 whitespace-nowrap">NIK</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Nama Lengkap</th>
                   <th className="py-2 px-2 text-center whitespace-nowrap">L/P</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">Gol. Darah</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Hubungan</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Tgl Lahir (Usia)</th>
-                  <th className="py-2 px-2.5 whitespace-nowrap">Status</th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">Status & Tgl Kawin</th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">Nama Orang Tua (Ayah & Ibu)</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Pendidikan & Pekerjaan</th>
                   <th className="py-2 px-2 text-center whitespace-nowrap">BPJS</th>
                   <th className="py-2 px-2.5 text-center whitespace-nowrap">Aksi</th>
@@ -259,7 +268,7 @@ export default function KKDetailPage() {
               <tbody className="divide-y divide-slate-100">
                 {members.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-xs text-slate-400">
+                    <td colSpan={12} className="py-8 text-center text-xs text-slate-400">
                       Belum ada anggota keluarga terdaftar pada KK ini.
                     </td>
                   </tr>
@@ -267,6 +276,9 @@ export default function KKDetailPage() {
                   members.map((member, idx) => {
                     const age = calculateCitizenAge(member.tanggal_lahir);
                     const marital = getCitizenMaritalStatus(member);
+                    const marriageDate = getCitizenMarriageDate(member);
+                    const bloodType = getCitizenBloodType(member);
+                    const parents = getCitizenParents(member);
 
                     return (
                       <tr key={member.id} className="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
@@ -290,6 +302,11 @@ export default function KKDetailPage() {
                             {member.jenis_kelamin}
                           </span>
                         </td>
+                        <td className="py-2 px-2 text-center whitespace-nowrap">
+                          <span className="inline-block text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                            {bloodType}
+                          </span>
+                        </td>
                         <td className="py-2 px-2.5 whitespace-nowrap">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                             {member.hubungan_keluarga}
@@ -304,6 +321,20 @@ export default function KKDetailPage() {
                         <td className="py-2 px-2.5 whitespace-nowrap">
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
                             {marital}
+                          </span>
+                          {marriageDate !== '-' && (
+                            <span className="text-[10px] text-slate-500 font-mono ml-1">
+                              ({marriageDate})
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-2.5 whitespace-nowrap text-[10px] text-slate-700">
+                          <span className="font-semibold text-slate-800">
+                            Ayah: {parents.ayah}
+                          </span>
+                          <span className="text-slate-300 mx-1">•</span>
+                          <span className="font-semibold text-slate-700">
+                            Ibu: {parents.ibu}
                           </span>
                         </td>
                         <td className="py-2 px-2.5 whitespace-nowrap text-slate-700">

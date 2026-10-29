@@ -11,6 +11,9 @@ import {
   getFamilyHouseNumber,
   calculateCitizenAge,
   getCitizenMaritalStatus,
+  getCitizenBloodType,
+  getCitizenMarriageDate,
+  getCitizenParents,
 } from '@/lib/mockData';
 import {
   Search,
@@ -833,12 +836,19 @@ function KKListContent() {
                                 </span>
                               </div>
                               <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-                                NIK: {m.nik}
+                                NIK: {m.nik} • Gol. Darah: {getCitizenBloodType(m)}
                               </p>
                               <p className="text-[10px] text-slate-600 mt-0.5 break-words">
                                 {calculateCitizenAge(m.tanggal_lahir)} Thn •{' '}
-                                {getCitizenMaritalStatus(m)} • {m.pekerjaan} •
-                                BPJS: {m.bpjs_kesehatan.toUpperCase()}
+                                {getCitizenMaritalStatus(m)}
+                                {getCitizenMarriageDate(m) !== '-'
+                                  ? ` (${getCitizenMarriageDate(m)})`
+                                  : ''}{' '}
+                                • {m.pekerjaan} • BPJS: {m.bpjs_kesehatan.toUpperCase()}
+                              </p>
+                              <p className="text-[10px] text-slate-500 mt-0.5 break-words">
+                                Orang Tua: Ayah <strong>{getCitizenParents(m).ayah}</strong> • Ibu{' '}
+                                <strong>{getCitizenParents(m).ibu}</strong>
                               </p>
                             </div>
                             <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex-shrink-0">

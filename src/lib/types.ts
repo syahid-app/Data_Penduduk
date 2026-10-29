@@ -6,6 +6,7 @@ export type MckType = 'sendiri' | 'kelompok' | 'umum' | 'tidak_ada';
 export type BansosType = 'none' | 'blt' | 'pkh' | 'bpnt' | 'kip';
 export type NoteStatus = 'pending' | 'reviewed' | 'resolved';
 export type MaritalStatus = 'Belum Kawin' | 'Kawin' | 'Cerai Hidup' | 'Cerai Mati';
+export type BloodType = 'A' | 'B' | 'AB' | 'O' | 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'Tidak Tahu';
 
 export interface Profile {
   id: string;
@@ -61,10 +62,14 @@ export interface Citizen {
   jenis_kelamin: GenderType;
   tempat_lahir: string;
   tanggal_lahir: string; // YYYY-MM-DD
+  golongan_darah?: string; // 'A' | 'B' | 'AB' | 'O' | 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'Tidak Tahu'
   agama: string;
   pendidikan_terakhir: string;
   pekerjaan: string;
   status_perkawinan?: MaritalStatus;
+  tanggal_perkawinan?: string; // YYYY-MM-DD or '-'
+  nama_ayah?: string;
+  nama_ibu?: string;
   bpjs_kesehatan: BpjsType;
   disabilitas: string; // 'tidak' | 'tunanetra' | 'tunarungu' | 'daksa' etc.
   status_tki: boolean;

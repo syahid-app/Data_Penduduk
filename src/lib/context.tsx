@@ -28,6 +28,9 @@ import {
   filterCitizensByRole,
   filterNotesByRole,
   computeStatsForProfile,
+  getCitizenBloodType,
+  getCitizenMarriageDate,
+  getCitizenParents,
 } from './mockData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
@@ -44,11 +47,19 @@ export function getDefaultPinForProfile(profile: Partial<Profile>): string {
   return '123456';
 }
 
+export type CitizenExtraFields = {
+  golongan_darah?: string;
+  tanggal_perkawinan?: string;
+  nama_ayah?: string;
+  nama_ibu?: string;
+};
+
 export function hydrateProfilesAndVillage(
   rawProfiles: Profile[],
   fallbackVillage: VillageConfig
-): { profiles: Profile[]; village: VillageConfig } {
+): { profiles: Profile[]; village: VillageConfig; citizenExtras: Record<string, CitizenExtraFields> } {
   let detectedVillage: VillageConfig = { ...fallbackVillage };
+  let detectedExtras: Record<string, CitizenExtraFields> = {};
 
   const profiles = rawProfiles.map((p) => {
     let pin = p.pin || getDefaultPinForProfile(p);
@@ -62,6 +73,9 @@ export function hydrateProfilesAndVillage(
             ...meta.village,
           };
         }
+        if (meta.citizenExtras && typeof meta.citizenExtras === 'object') {
+          detectedExtras = { ...detectedExtras, ...meta.citizenExtras };
+        }
       } catch {
         // Ignore invalid JSON in avatar_url
       }
@@ -72,7 +86,44 @@ export function hydrateProfilesAndVillage(
     };
   });
 
-  return { profiles, village: detectedVillage };
+  return { profiles, village: detectedVillage, citizenExtras: detectedExtras };
+}
+
+export function buildCitizenExtrasMap(citizensList: Citizen[]): Record<string, CitizenExtraFields> {
+  const map: Record<string, CitizenExtraFields> = {};
+  citizensList.forEach((c) => {
+    if (!c.nik) return;
+    const parents = getCitizenParents(c);
+    map[c.nik] = {
+      golongan_darah: getCitizenBloodType(c),
+      tanggal_perkawinan: getCitizenMarriageDate(c),
+      nama_ayah: parents.ayah,
+      nama_ibu: parents.ibu,
+    };
+  });
+  return map;
+}
+
+export function hydrateCitizensList(
+  rawCitizens: Citizen[],
+  extrasMap?: Record<string, CitizenExtraFields>
+): Citizen[] {
+  return rawCitizens.map((c) => {
+    const ext = extrasMap?.[c.nik];
+    const parents = getCitizenParents({
+      ...c,
+      nama_ayah: c.nama_ayah || ext?.nama_ayah,
+      nama_ibu: c.nama_ibu || ext?.nama_ibu,
+    });
+    return {
+      ...c,
+      golongan_darah: c.golongan_darah || ext?.golongan_darah || getCitizenBloodType(c),
+      tanggal_perkawinan:
+        c.tanggal_perkawinan || ext?.tanggal_perkawinan || getCitizenMarriageDate(c),
+      nama_ayah: parents.ayah,
+      nama_ibu: parents.ibu,
+    };
+  });
 }
 
 // =========================================================================
@@ -80,12 +131,14 @@ export function hydrateProfilesAndVillage(
 // =========================================================================
 export const sanitizeProfile = (
   p: Partial<Profile>,
-  villageConfig?: VillageConfig
+  villageConfig?: VillageConfig,
+  citizenExtras?: Record<string, CitizenExtraFields>
 ): any => {
   const pin = getDefaultPinForProfile(p);
   const metaPayload: any = { pin };
-  if (p.role === 'admin' && villageConfig) {
-    metaPayload.village = villageConfig;
+  if (p.role === 'admin') {
+    if (villageConfig) metaPayload.village = villageConfig;
+    if (citizenExtras) metaPayload.citizenExtras = citizenExtras;
   }
 
   const allowed = [
@@ -135,8 +188,8 @@ export const sanitizeFamily = (f: Partial<Family>): any => {
   return clean;
 };
 
-export const sanitizeCitizen = (c: Partial<Citizen>): any => {
-  const allowed = [
+export const sanitizeCitizen = (c: Partial<Citizen>, includeExtended = true): any => {
+  const baseAllowed = [
     'id',
     'family_id',
     'nik',
@@ -156,6 +209,13 @@ export const sanitizeCitizen = (c: Partial<Citizen>): any => {
     'akta_nikah',
     'created_at',
   ];
+  const extendedAllowed = [
+    'golongan_darah',
+    'tanggal_perkawinan',
+    'nama_ayah',
+    'nama_ibu',
+  ];
+  const allowed = includeExtended ? [...baseAllowed, ...extendedAllowed] : baseAllowed;
   const clean: any = {};
   for (const key of allowed) {
     if ((c as any)[key] !== undefined) {
@@ -289,6 +349,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         supabase.from('notes').select('*').order('created_at', { ascending: false }),
       ]);
 
+      let remoteCitizenExtras: Record<string, CitizenExtraFields> = {};
+
       // Auto-seed profiles if table exists and is empty
       if (!profRes.error && profRes.data) {
         if (profRes.data.length > 0) {
@@ -301,8 +363,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               } catch {}
             }
           }
-          const { profiles: hydratedProfiles, village: hydratedVillage } =
-            hydrateProfilesAndVillage(profRes.data, currentLocalVillage);
+          const {
+            profiles: hydratedProfiles,
+            village: hydratedVillage,
+            citizenExtras,
+          } = hydrateProfilesAndVillage(profRes.data, currentLocalVillage);
+          remoteCitizenExtras = citizenExtras;
           setAllProfiles(hydratedProfiles);
           setVillageConfig(hydratedVillage);
           if (typeof window !== 'undefined') {
@@ -312,9 +378,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } else {
           await supabase
             .from('profiles')
-            .upsert(DEMO_PROFILES.map((p) => sanitizeProfile(p, DEFAULT_VILLAGE_CONFIG)), {
-              onConflict: 'id',
-            });
+            .upsert(
+              DEMO_PROFILES.map((p) =>
+                sanitizeProfile(p, DEFAULT_VILLAGE_CONFIG, buildCitizenExtrasMap(INITIAL_CITIZENS))
+              ),
+              { onConflict: 'id' }
+            );
         }
       }
 
@@ -330,10 +399,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       if (!citRes.error && citRes.data) {
         if (citRes.data.length > 0) {
-          setCitizens(citRes.data);
-          localStorage.setItem(STORAGE_KEYS.CITIZENS, JSON.stringify(citRes.data));
+          const hydratedCits = hydrateCitizensList(citRes.data, remoteCitizenExtras);
+          setCitizens(hydratedCits);
+          localStorage.setItem(STORAGE_KEYS.CITIZENS, JSON.stringify(hydratedCits));
         } else if (!famRes.error && famRes.data && famRes.data.length === 0) {
-          await supabase.from('citizens').upsert(INITIAL_CITIZENS.map(sanitizeCitizen), { onConflict: 'nik' });
+          const { error: seedCitErr } = await supabase
+            .from('citizens')
+            .upsert(INITIAL_CITIZENS.map((c) => sanitizeCitizen(c, true)), { onConflict: 'nik' });
+          if (seedCitErr) {
+            await supabase
+              .from('citizens')
+              .upsert(INITIAL_CITIZENS.map((c) => sanitizeCitizen(c, false)), { onConflict: 'nik' });
+          }
         }
       }
 
@@ -944,7 +1021,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       created_at: new Date().toISOString(),
     };
 
-    setCitizens((prev) => [newCit, ...prev]);
+    const updatedCitizensList = [newCit, ...citizens];
+    setCitizens(updatedCitizensList);
 
     if (citData.hubungan_keluarga === 'Kepala Keluarga' && citData.family_id) {
       setFamilies((prev) =>
@@ -958,11 +1036,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const clean = sanitizeCitizen(newCit);
-        const { error } = await supabase.from('citizens').upsert(clean, { onConflict: 'nik' });
+        const cleanFull = sanitizeCitizen(newCit, true);
+        let { error } = await supabase.from('citizens').upsert(cleanFull, { onConflict: 'nik' });
+        if (error) {
+          const cleanBase = sanitizeCitizen(newCit, false);
+          const fallbackRes = await supabase.from('citizens').upsert(cleanBase, { onConflict: 'nik' });
+          error = fallbackRes.error;
+        }
         if (error) {
           console.error('Supabase insert citizen error:', error);
           return { success: false, error: error.message };
+        }
+        const adminProf = allProfiles.find((p) => p.role === 'admin') || currentProfile;
+        if (adminProf) {
+          await supabase
+            .from('profiles')
+            .upsert(
+              sanitizeProfile(adminProf, villageConfig, buildCitizenExtrasMap(updatedCitizensList)),
+              { onConflict: 'id' }
+            );
         }
         if (citData.hubungan_keluarga === 'Kepala Keluarga' && citData.family_id) {
           await supabase
@@ -986,9 +1078,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     const existingCit = citizens.find((c) => c.id === id);
-    setCitizens((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...partial } : c))
-    );
+    const updatedCitizensList = citizens.map((c) => (c.id === id ? { ...c, ...partial } : c));
+    setCitizens(updatedCitizensList);
 
     const targetFamilyId = partial.family_id || existingCit?.family_id;
     const targetHubungan = partial.hubungan_keluarga || existingCit?.hubungan_keluarga;
@@ -1004,11 +1095,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const clean = sanitizeCitizen(partial);
-        const { error } = await supabase.from('citizens').update(clean).eq('id', id);
+        const cleanFull = sanitizeCitizen(partial, true);
+        let { error } = await supabase.from('citizens').update(cleanFull).eq('id', id);
+        if (error) {
+          const cleanBase = sanitizeCitizen(partial, false);
+          if (Object.keys(cleanBase).length > 0) {
+            const fallbackRes = await supabase.from('citizens').update(cleanBase).eq('id', id);
+            error = fallbackRes.error;
+          } else {
+            error = null;
+          }
+        }
         if (error) {
           console.error('Supabase update citizen error:', error);
           return { success: false, error: error.message };
+        }
+        const adminProf = allProfiles.find((p) => p.role === 'admin') || currentProfile;
+        if (adminProf) {
+          await supabase
+            .from('profiles')
+            .upsert(
+              sanitizeProfile(adminProf, villageConfig, buildCitizenExtrasMap(updatedCitizensList)),
+              { onConflict: 'id' }
+            );
         }
         if (targetHubungan === 'Kepala Keluarga' && targetFamilyId && targetNama) {
           await supabase
@@ -1102,7 +1211,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (isSupabaseConfigured && supabase) {
       try {
         const cleanFamilies = resolvedIncomingFamilies.map(sanitizeFamily);
-        const cleanCitizens = resolvedIncomingCitizens.map(sanitizeCitizen);
+        const cleanCitizensFull = resolvedIncomingCitizens.map((c) => sanitizeCitizen(c, true));
 
         const { error: famErr } = await supabase.from('families').upsert(cleanFamilies, { onConflict: 'no_kk' });
         if (famErr) {
@@ -1115,7 +1224,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           };
         }
 
-        const { error: citErr } = await supabase.from('citizens').upsert(cleanCitizens, { onConflict: 'nik' });
+        let { error: citErr } = await supabase.from('citizens').upsert(cleanCitizensFull, { onConflict: 'nik' });
+        if (citErr) {
+          const cleanCitizensBase = resolvedIncomingCitizens.map((c) => sanitizeCitizen(c, false));
+          const fallbackCit = await supabase.from('citizens').upsert(cleanCitizensBase, { onConflict: 'nik' });
+          citErr = fallbackCit.error;
+        }
         if (citErr) {
           console.warn('Supabase bulk citizens upsert error:', citErr);
           return {
@@ -1124,6 +1238,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             citizensCount: 0,
             error: `Gagal sinkronisasi Warga ke Supabase: ${citErr.message}`,
           };
+        }
+
+        const adminProf = allProfiles.find((p) => p.role === 'admin') || currentProfile;
+        if (adminProf) {
+          await supabase
+            .from('profiles')
+            .upsert(
+              sanitizeProfile(adminProf, villageConfig, buildCitizenExtrasMap(resolvedIncomingCitizens)),
+              { onConflict: 'id' }
+            );
         }
 
         setLastSyncedAt(new Date().toLocaleTimeString('id-ID'));
@@ -1146,9 +1270,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     try {
       setIsSyncingWithSupabase(true);
-      const cleanProfiles = allProfiles.map((p) => sanitizeProfile(p, villageConfig));
+      const extrasMap = buildCitizenExtrasMap(citizens);
+      const cleanProfiles = allProfiles.map((p) => sanitizeProfile(p, villageConfig, extrasMap));
       const cleanFamilies = families.map(sanitizeFamily);
-      const cleanCitizens = citizens.map(sanitizeCitizen);
+      const cleanCitizensFull = citizens.map((c) => sanitizeCitizen(c, true));
       const cleanNotes = notes.map(sanitizeNote);
 
       await supabase.from('profiles').upsert(cleanProfiles, { onConflict: 'id' });
@@ -1156,7 +1281,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { error: famErr } = await supabase.from('families').upsert(cleanFamilies, { onConflict: 'no_kk' });
       if (famErr) throw famErr;
 
-      const { error: citErr } = await supabase.from('citizens').upsert(cleanCitizens, { onConflict: 'nik' });
+      let { error: citErr } = await supabase.from('citizens').upsert(cleanCitizensFull, { onConflict: 'nik' });
+      if (citErr) {
+        const cleanCitizensBase = citizens.map((c) => sanitizeCitizen(c, false));
+        const fallbackRes = await supabase.from('citizens').upsert(cleanCitizensBase, { onConflict: 'nik' });
+        citErr = fallbackRes.error;
+      }
       if (citErr) throw citErr;
 
       if (cleanNotes.length > 0) {
@@ -1205,9 +1335,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (citRes.error) throw citRes.error;
       if (noteRes.error) throw noteRes.error;
 
+      let fetchedExtras: Record<string, CitizenExtraFields> = {};
       if (profRes.data && profRes.data.length > 0) {
-        const { profiles: hydratedProfiles, village: hydratedVillage } =
-          hydrateProfilesAndVillage(profRes.data, villageConfig);
+        const {
+          profiles: hydratedProfiles,
+          village: hydratedVillage,
+          citizenExtras,
+        } = hydrateProfilesAndVillage(profRes.data, villageConfig);
+        fetchedExtras = citizenExtras;
         setAllProfiles(hydratedProfiles);
         setVillageConfig(hydratedVillage);
         localStorage.setItem(STORAGE_KEYS.PROFILES_LIST, JSON.stringify(hydratedProfiles));
@@ -1221,9 +1356,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         count += famRes.data.length;
       }
       if (citRes.data) {
-        setCitizens(citRes.data);
-        localStorage.setItem(STORAGE_KEYS.CITIZENS, JSON.stringify(citRes.data));
-        count += citRes.data.length;
+        const hydratedCits = hydrateCitizensList(citRes.data, fetchedExtras);
+        setCitizens(hydratedCits);
+        localStorage.setItem(STORAGE_KEYS.CITIZENS, JSON.stringify(hydratedCits));
+        count += hydratedCits.length;
       }
       if (noteRes.data) {
         setNotes(noteRes.data);

@@ -56,7 +56,7 @@ async function run() {
       name: 'Syahid App',
       email: 'syahid.dev@desa-karanghaur.id',
     },
-    message: 'feat: Sistem Informasi Data Kependudukan Desa Karanghaur (PWA Next.js + Supabase)',
+    message: 'feat: tambah kolom Nama Orang Tua (Ayah & Ibu), Tanggal Perkawinan, dan Golongan Darah',
   });
 
   console.log('Commit completed. SHA:', sha);

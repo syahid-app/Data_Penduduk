@@ -5,7 +5,14 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/lib/context';
 import { Citizen, MaritalStatus } from '@/lib/types';
-import { getCitizenMaritalStatus, getFamilyHouseNumber, calculateCitizenAge } from '@/lib/mockData';
+import {
+  getCitizenMaritalStatus,
+  getFamilyHouseNumber,
+  calculateCitizenAge,
+  getCitizenBloodType,
+  getCitizenMarriageDate,
+  getCitizenParents,
+} from '@/lib/mockData';
 import { NoteModal } from '@/components/NoteModal';
 import { CitizenFormModal } from '@/components/CitizenFormModal';
 import {
@@ -107,11 +114,14 @@ function WargaListContent() {
     return visibleCitizens.filter((c) => {
       const q = searchQuery.toLowerCase().trim();
       const family = getFamilyById(c.family_id);
+      const parents = getCitizenParents(c);
       const matchSearch =
         !q ||
         c.nik.toLowerCase().includes(q) ||
         c.nama_lengkap.toLowerCase().includes(q) ||
         c.pekerjaan.toLowerCase().includes(q) ||
+        parents.ayah.toLowerCase().includes(q) ||
+        parents.ibu.toLowerCase().includes(q) ||
         (family?.no_kk || '').toLowerCase().includes(q);
 
       if (!matchSearch) return false;
@@ -356,9 +366,11 @@ function WargaListContent() {
                   <th className="py-2 px-2.5 whitespace-nowrap">NIK</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Nama Lengkap</th>
                   <th className="py-2 px-2 text-center whitespace-nowrap">L/P</th>
+                  <th className="py-2 px-2 text-center whitespace-nowrap">Gol. Darah</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Hubungan</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Usia / Tgl Lahir</th>
-                  <th className="py-2 px-2.5 whitespace-nowrap">Status</th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">Status & Tgl Kawin</th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">Nama Orang Tua (Ayah & Ibu)</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Rumah & Wilayah</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">No. KK & Kepala</th>
                   <th className="py-2 px-2.5 whitespace-nowrap">Pekerjaan</th>
@@ -371,7 +383,7 @@ function WargaListContent() {
               <tbody className="divide-y divide-slate-100">
                 {paginatedCitizens.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="py-12 px-4 text-center">
+                    <td colSpan={14} className="py-12 px-4 text-center">
                       <Users className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
                       <p className="text-xs font-bold text-slate-700">Warga tidak ditemukan</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
@@ -392,6 +404,9 @@ function WargaListContent() {
                     const family = getFamilyById(citizen.family_id);
                     const age = calculateCitizenAge(citizen.tanggal_lahir);
                     const maritalStatus = getCitizenMaritalStatus(citizen);
+                    const marriageDate = getCitizenMarriageDate(citizen);
+                    const bloodType = getCitizenBloodType(citizen);
+                    const parents = getCitizenParents(citizen);
                     const houseNumber = getFamilyHouseNumber(family);
                     const rowNumber = pageSize === 0 ? idx + 1 : (safePage - 1) * pageSize + idx + 1;
 
@@ -444,14 +459,21 @@ function WargaListContent() {
                           </span>
                         </td>
 
-                        {/* 5. Hubungan */}
+                        {/* 5. Golongan Darah */}
+                        <td className="py-1.5 px-2 text-center whitespace-nowrap">
+                          <span className="inline-block text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                            {bloodType}
+                          </span>
+                        </td>
+
+                        {/* 6. Hubungan */}
                         <td className="py-1.5 px-2.5 whitespace-nowrap">
                           <span className="text-[10px] font-semibold text-slate-700">
                             {citizen.hubungan_keluarga}
                           </span>
                         </td>
 
-                        {/* 6. Usia & Tgl Lahir */}
+                        {/* 7. Usia & Tgl Lahir */}
                         <td className="py-1.5 px-2.5 whitespace-nowrap text-slate-700">
                           <span className="font-bold text-slate-900">{age} Thn</span>
                           <span className="text-[10px] text-slate-400 ml-1">
@@ -459,14 +481,32 @@ function WargaListContent() {
                           </span>
                         </td>
 
-                        {/* 7. Status Perkawinan */}
+                        {/* 8. Status & Tanggal Perkawinan */}
                         <td className="py-1.5 px-2.5 whitespace-nowrap">
-                          <span
-                            className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border ${getMaritalBadgeStyle(
-                              maritalStatus
-                            )}`}
-                          >
-                            {maritalStatus}
+                          <div className="flex items-center gap-1">
+                            <span
+                              className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border ${getMaritalBadgeStyle(
+                                maritalStatus
+                              )}`}
+                            >
+                              {maritalStatus}
+                            </span>
+                            {marriageDate !== '-' && (
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                ({marriageDate})
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 9. Nama Orang Tua (Ayah & Ibu) */}
+                        <td className="py-1.5 px-2.5 whitespace-nowrap text-[10px] text-slate-700">
+                          <span className="font-semibold text-slate-800">
+                            Ayah: {parents.ayah}
+                          </span>
+                          <span className="text-slate-300 mx-1">•</span>
+                          <span className="font-semibold text-slate-700">
+                            Ibu: {parents.ibu}
                           </span>
                         </td>
 
@@ -678,6 +718,9 @@ function WargaListContent() {
                 >
                   {getCitizenMaritalStatus(selectedCitizenForDetail)}
                 </span>
+                <span className="font-extrabold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  Gol. Darah: {getCitizenBloodType(selectedCitizenForDetail)}
+                </span>
                 <span
                   className={`font-bold px-2.5 py-1 rounded-full border uppercase ${getBpjsBadgeStyle(
                     selectedCitizenForDetail.bpjs_kesehatan
@@ -690,7 +733,7 @@ function WargaListContent() {
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-sky-600" />
-                  Identitas Pribadi
+                  Identitas Pribadi & Orang Tua
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div>
@@ -700,9 +743,10 @@ function WargaListContent() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Usia:</span>
+                    <span className="text-slate-400 block">Usia & Gol. Darah:</span>
                     <span className="font-semibold text-slate-800">
-                      {calculateCitizenAge(selectedCitizenForDetail.tanggal_lahir)} Tahun
+                      {calculateCitizenAge(selectedCitizenForDetail.tanggal_lahir)} Tahun • Gol.{' '}
+                      {getCitizenBloodType(selectedCitizenForDetail)}
                     </span>
                   </div>
                   <div>
@@ -715,6 +759,30 @@ function WargaListContent() {
                     <span className="text-slate-400 block">Jenis Kelamin:</span>
                     <span className="font-semibold text-slate-800">
                       {selectedCitizenForDetail.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Status Perkawinan:</span>
+                    <span className="font-semibold text-slate-800">
+                      {getCitizenMaritalStatus(selectedCitizenForDetail)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Tanggal Perkawinan:</span>
+                    <span className="font-mono font-semibold text-slate-800">
+                      {getCitizenMarriageDate(selectedCitizenForDetail)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Nama Ayah Kandung:</span>
+                    <span className="font-bold text-slate-900 uppercase">
+                      {getCitizenParents(selectedCitizenForDetail).ayah}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Nama Ibu Kandung:</span>
+                    <span className="font-bold text-slate-900 uppercase">
+                      {getCitizenParents(selectedCitizenForDetail).ibu}
                     </span>
                   </div>
                 </div>

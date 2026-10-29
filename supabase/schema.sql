@@ -54,10 +54,14 @@ CREATE TABLE citizens (
     jenis_kelamin VARCHAR(1) NOT NULL CHECK (jenis_kelamin IN ('L', 'P')),
     tempat_lahir TEXT NOT NULL,
     tanggal_lahir DATE NOT NULL,
+    golongan_darah TEXT DEFAULT 'O',
     agama TEXT DEFAULT 'Islam',
     pendidikan_terakhir TEXT NOT NULL,
     pekerjaan TEXT NOT NULL,
     status_perkawinan TEXT DEFAULT 'Kawin' CHECK (status_perkawinan IN ('Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati')),
+    tanggal_perkawinan TEXT DEFAULT '-',
+    nama_ayah TEXT DEFAULT '-',
+    nama_ibu TEXT DEFAULT '-',
     bpjs_kesehatan TEXT DEFAULT 'kis' CHECK (bpjs_kesehatan IN ('mandiri', 'kis', 'tidak')),
     disabilitas TEXT DEFAULT 'tidak',
     status_tki BOOLEAN DEFAULT false,
@@ -65,6 +69,12 @@ CREATE TABLE citizens (
     akta_nikah BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Safe ALTER TABLE statements if updating existing database:
+ALTER TABLE citizens ADD COLUMN IF NOT EXISTS golongan_darah TEXT DEFAULT 'O';
+ALTER TABLE citizens ADD COLUMN IF NOT EXISTS tanggal_perkawinan TEXT DEFAULT '-';
+ALTER TABLE citizens ADD COLUMN IF NOT EXISTS nama_ayah TEXT DEFAULT '-';
+ALTER TABLE citizens ADD COLUMN IF NOT EXISTS nama_ibu TEXT DEFAULT '-';
 
 -- 5. CREATE NOTES TABLE (Catatan Wilayah RT/RW/Kadus)
 CREATE TABLE notes (
@@ -123,27 +133,27 @@ INSERT INTO families (id, no_kk, kepala_keluarga, alamat, no_rumah, dusun, rw, r
 ON CONFLICT (no_kk) DO NOTHING;
 
 -- 9. SEED DATA CITIZENS
-INSERT INTO citizens (id, family_id, nik, nama_lengkap, hubungan_keluarga, jenis_kelamin, tempat_lahir, tanggal_lahir, agama, pendidikan_terakhir, pekerjaan, status_perkawinan, bpjs_kesehatan, disabilitas, status_tki, akta_kelahiran, akta_nikah, created_at) VALUES
-('cit-01', 'fam-01', '3216081205720001', 'SAMSUDIN', 'Kepala Keluarga', 'L', 'Bekasi', '1972-05-12', 'Islam', 'SMP / Sederajat', 'Petani / Pekebun', 'Kawin', 'kis', 'tidak', false, true, true, '2024-01-15 08:30:00+00'),
-('cit-02', 'fam-01', '3216085508760002', 'ROHAYATI', 'Istri', 'P', 'Bekasi', '1976-08-15', 'Islam', 'SD / Sederajat', 'Mengurus Rumah Tangga', 'Kawin', 'kis', 'tidak', false, true, true, '2024-01-15 08:30:00+00'),
-('cit-03', 'fam-01', '3216081404020003', 'RIZKY RAMADHAN', 'Anak', 'L', 'Bekasi', '2002-04-14', 'Islam', 'SMA / Sederajat', 'Pelajar / Mahasiswa', 'Belum Kawin', 'kis', 'tidak', false, true, false, '2024-01-15 08:30:00+00'),
-('cit-04', 'fam-01', '3216086209120004', 'NUR AISYAH', 'Anak', 'P', 'Bekasi', '2012-09-22', 'Islam', 'SD / Sederajat', 'Belum / Tidak Bekerja', 'Belum Kawin', 'kis', 'tidak', false, true, false, '2024-01-15 08:30:00+00'),
-('cit-05', 'fam-02', '3216082407750001', 'ACHMAD SUHANDI', 'Kepala Keluarga', 'L', 'Karawang', '1975-07-24', 'Islam', 'SMK / Sederajat', 'Karyawan Swasta', 'Kawin', 'mandiri', 'tidak', false, true, true, '2024-01-20 10:15:00+00'),
-('cit-06', 'fam-02', '3216086011780002', 'ENDAH RETNOWATI', 'Istri', 'P', 'Solo', '1978-11-20', 'Islam', 'D3 Kebidanan', 'Tenaga Kesehatan', 'Kawin', 'mandiri', 'tidak', false, true, true, '2024-01-20 10:15:00+00'),
-('cit-07', 'fam-02', '3216080503030003', 'DIMAS PRASETYO', 'Anak', 'L', 'Bekasi', '2003-03-05', 'Islam', 'SMA / Sederajat', 'Karyawan Swasta', 'Belum Kawin', 'mandiri', 'tidak', false, true, false, '2024-01-20 10:15:00+00'),
-('cit-08', 'fam-03', '3216081002680001', 'DEDE SUTISNA', 'Kepala Keluarga', 'L', 'Bekasi', '1968-02-10', 'Islam', 'SD / Sederajat', 'Buruh Harian Lepas', 'Kawin', 'kis', 'tidak', false, true, true, '2024-02-01 14:00:00+00'),
-('cit-09', 'fam-03', '3216085106720002', 'KARSINAH', 'Istri', 'P', 'Bekasi', '1972-06-11', 'Islam', 'Tidak / Belum Sekolah', 'Mengurus Rumah Tangga', 'Kawin', 'kis', 'tidak', false, false, true, '2024-02-01 14:00:00+00'),
-('cit-10', 'fam-03', '3216081909060003', 'AGUS KURNIAWAN', 'Anak', 'L', 'Bekasi', '2006-09-19', 'Islam', 'SMP / Sederajat', 'Buruh Harian Lepas', 'Belum Kawin', 'kis', 'tidak', false, true, false, '2024-02-01 14:00:00+00'),
-('cit-11', 'fam-04', '3216080101600001', 'H. ENDANG WIJAYA', 'Kepala Keluarga', 'L', 'Bekasi', '1960-01-01', 'Islam', 'S1 Ekonomi', 'Wiraswasta / Pedagang', 'Kawin', 'mandiri', 'tidak', false, true, true, '2024-02-10 09:20:00+00'),
-('cit-12', 'fam-04', '3216084803650002', 'HJ. SITI KHADIJAH', 'Istri', 'P', 'Cirebon', '1965-03-08', 'Islam', 'SMA / Sederajat', 'Wiraswasta / Pedagang', 'Kawin', 'mandiri', 'tidak', false, true, true, '2024-02-10 09:20:00+00'),
-('cit-13', 'fam-05', '3216081808800001', 'WARSONO', 'Kepala Keluarga', 'L', 'Brebes', '1980-08-18', 'Islam', 'SMP / Sederajat', 'Sopir / Angkutan', 'Cerai Hidup', 'kis', 'tidak', false, true, false, '2024-02-12 11:00:00+00'),
-('cit-14', 'fam-05', '3216082212080002', 'BAYU PAMUNGKAS', 'Anak', 'L', 'Bekasi', '2008-12-22', 'Islam', 'SD / Sederajat', 'Pelajar / Mahasiswa', 'Belum Kawin', 'kis', 'tidak', false, true, false, '2024-02-12 11:00:00+00'),
-('cit-15', 'fam-06', '3216080709840001', 'KOSASIH', 'Kepala Keluarga', 'L', 'Bekasi', '1984-09-07', 'Islam', 'SMA / Sederajat', 'Tukang Kayu / Bangunan', 'Kawin', 'tidak', 'tidak', false, true, true, '2024-02-15 13:45:00+00'),
-('cit-16', 'fam-06', '3216084405880002', 'MIMI AMINAH', 'Istri', 'P', 'Bekasi', '1988-05-04', 'Islam', 'SMP / Sederajat', 'Mengurus Rumah Tangga', 'Kawin', 'tidak', 'tidak', false, true, true, '2024-02-15 13:45:00+00'),
-('cit-17', 'fam-07', '3216081103790001', 'ASEP SUNANDAR', 'Kepala Keluarga', 'L', 'Bandung', '1979-03-11', 'Islam', 'SMK / Sederajat', 'Karyawan Swasta', 'Cerai Mati', 'kis', 'tidak', false, true, false, '2024-02-18 08:00:00+00'),
-('cit-18', 'fam-08', '3216080404550001', 'M. TOHIR', 'Kepala Keluarga', 'L', 'Bekasi', '1955-04-04', 'Islam', 'SD / Sederajat', 'Pensiunan / Tidak Bekerja', 'Kawin', 'kis', 'daksa', false, true, true, '2024-02-20 16:30:00+00'),
-('cit-19', 'fam-09', '3216081505630001', 'H. BADRUDIN', 'Kepala Keluarga', 'L', 'Bekasi', '1963-05-15', 'Islam', 'SMA / Sederajat', 'Wiraswasta / Pedagang', 'Kawin', 'mandiri', 'tidak', false, true, true, '2024-03-01 10:00:00+00'),
-('cit-20', 'fam-10', '3216081910810001', 'SUKIMAN', 'Kepala Keluarga', 'L', 'Kebumen', '1981-10-19', 'Islam', 'SMP / Sederajat', 'Buruh Tani', 'Kawin', 'kis', 'tidak', true, true, true, '2024-03-05 11:20:00+00')
+INSERT INTO citizens (id, family_id, nik, nama_lengkap, hubungan_keluarga, jenis_kelamin, tempat_lahir, tanggal_lahir, golongan_darah, agama, pendidikan_terakhir, pekerjaan, status_perkawinan, tanggal_perkawinan, nama_ayah, nama_ibu, bpjs_kesehatan, disabilitas, status_tki, akta_kelahiran, akta_nikah, created_at) VALUES
+('cit-01', 'fam-01', '3216081205720001', 'SAMSUDIN', 'Kepala Keluarga', 'L', 'Bekasi', '1972-05-12', 'O', 'Islam', 'SMP / Sederajat', 'Petani / Pekebun', 'Kawin', '1999-06-15', 'H. ABDUL KARIM', 'HJ. MAEMUNAH', 'kis', 'tidak', false, true, true, '2024-01-15 08:30:00+00'),
+('cit-02', 'fam-01', '3216085508760002', 'ROHAYATI', 'Istri', 'P', 'Bekasi', '1976-08-15', 'A', 'Islam', 'SD / Sederajat', 'Mengurus Rumah Tangga', 'Kawin', '1999-06-15', 'SANUSI', 'ROKAYA', 'kis', 'tidak', false, true, true, '2024-01-15 08:30:00+00'),
+('cit-03', 'fam-01', '3216081404020003', 'RIZKY RAMADHAN', 'Anak', 'L', 'Bekasi', '2002-04-14', 'O', 'Islam', 'SMA / Sederajat', 'Pelajar / Mahasiswa', 'Belum Kawin', '-', 'SAMSUDIN', 'ROHAYATI', 'kis', 'tidak', false, true, false, '2024-01-15 08:30:00+00'),
+('cit-04', 'fam-01', '3216086209120004', 'NUR AISYAH', 'Anak', 'P', 'Bekasi', '2012-09-22', 'A', 'Islam', 'SD / Sederajat', 'Belum / Tidak Bekerja', 'Belum Kawin', '-', 'SAMSUDIN', 'ROHAYATI', 'kis', 'tidak', false, true, false, '2024-01-15 08:30:00+00'),
+('cit-05', 'fam-02', '3216082407750001', 'ACHMAD SUHANDI', 'Kepala Keluarga', 'L', 'Karawang', '1975-07-24', 'B', 'Islam', 'SMK / Sederajat', 'Karyawan Swasta', 'Kawin', '2001-09-10', 'SUHANDI', 'MARYAM', 'mandiri', 'tidak', false, true, true, '2024-01-20 10:15:00+00'),
+('cit-06', 'fam-02', '3216086011780002', 'ENDAH RETNOWATI', 'Istri', 'P', 'Solo', '1978-11-20', 'AB', 'Islam', 'D3 Kebidanan', 'Tenaga Kesehatan', 'Kawin', '2001-09-10', 'SUTOPO', 'SRI WAHYUNI', 'mandiri', 'tidak', false, true, true, '2024-01-20 10:15:00+00'),
+('cit-07', 'fam-02', '3216080503030003', 'DIMAS PRASETYO', 'Anak', 'L', 'Bekasi', '2003-03-05', 'B', 'Islam', 'SMA / Sederajat', 'Karyawan Swasta', 'Belum Kawin', '-', 'ACHMAD SUHANDI', 'ENDAH RETNOWATI', 'mandiri', 'tidak', false, true, false, '2024-01-20 10:15:00+00'),
+('cit-08', 'fam-03', '3216081002680001', 'DEDE SUTISNA', 'Kepala Keluarga', 'L', 'Bekasi', '1968-02-10', 'O', 'Islam', 'SD / Sederajat', 'Buruh Harian Lepas', 'Kawin', '1995-04-20', 'SUTISNA', 'SAODAH', 'kis', 'tidak', false, true, true, '2024-02-01 14:00:00+00'),
+('cit-09', 'fam-03', '3216085106720002', 'KARSINAH', 'Istri', 'P', 'Bekasi', '1972-06-11', 'O', 'Islam', 'Tidak / Belum Sekolah', 'Mengurus Rumah Tangga', 'Kawin', '1995-04-20', 'MADROJI', 'NENGSIH', 'kis', 'tidak', false, false, true, '2024-02-01 14:00:00+00'),
+('cit-10', 'fam-03', '3216081909060003', 'AGUS KURNIAWAN', 'Anak', 'L', 'Bekasi', '2006-09-19', 'O', 'Islam', 'SMP / Sederajat', 'Buruh Harian Lepas', 'Belum Kawin', '-', 'DEDE SUTISNA', 'KARSINAH', 'kis', 'tidak', false, true, false, '2024-02-01 14:00:00+00'),
+('cit-11', 'fam-04', '3216080101600001', 'H. ENDANG WIJAYA', 'Kepala Keluarga', 'L', 'Bekasi', '1960-01-01', 'A', 'Islam', 'S1 Ekonomi', 'Wiraswasta / Pedagang', 'Kawin', '1988-11-12', 'H. WIJAYA', 'HJ. FATIMAH', 'mandiri', 'tidak', false, true, true, '2024-02-10 09:20:00+00'),
+('cit-12', 'fam-04', '3216084803650002', 'HJ. SITI KHADIJAH', 'Istri', 'P', 'Cirebon', '1965-03-08', 'B', 'Islam', 'SMA / Sederajat', 'Wiraswasta / Pedagang', 'Kawin', '1988-11-12', 'H. HASAN', 'HJ. AMINAH', 'mandiri', 'tidak', false, true, true, '2024-02-10 09:20:00+00'),
+('cit-13', 'fam-05', '3216081808800001', 'WARSONO', 'Kepala Keluarga', 'L', 'Brebes', '1980-08-18', 'O', 'Islam', 'SMP / Sederajat', 'Sopir / Angkutan', 'Cerai Hidup', '2005-07-17', 'KASMURI', 'SUMIATI', 'kis', 'tidak', false, true, false, '2024-02-12 11:00:00+00'),
+('cit-14', 'fam-05', '3216082212080002', 'BAYU PAMUNGKAS', 'Anak', 'L', 'Bekasi', '2008-12-22', 'O', 'Islam', 'SD / Sederajat', 'Pelajar / Mahasiswa', 'Belum Kawin', '-', 'WARSONO', 'SULASTRI', 'kis', 'tidak', false, true, false, '2024-02-12 11:00:00+00'),
+('cit-15', 'fam-06', '3216080709840001', 'KOSASIH', 'Kepala Keluarga', 'L', 'Bekasi', '1984-09-07', 'A', 'Islam', 'SMA / Sederajat', 'Tukang Kayu / Bangunan', 'Kawin', '2010-02-14', 'SARMAN', 'JUBAEDAH', 'tidak', 'tidak', false, true, true, '2024-02-15 13:45:00+00'),
+('cit-16', 'fam-06', '3216084405880002', 'MIMI AMINAH', 'Istri', 'P', 'Bekasi', '1988-05-04', 'O', 'Islam', 'SMP / Sederajat', 'Mengurus Rumah Tangga', 'Kawin', '2010-02-14', 'MISBAH', 'HALIMAH', 'tidak', 'tidak', false, true, true, '2024-02-15 13:45:00+00'),
+('cit-17', 'fam-07', '3216081103790001', 'ASEP SUNANDAR', 'Kepala Keluarga', 'L', 'Bandung', '1979-03-11', 'AB', 'Islam', 'SMK / Sederajat', 'Karyawan Swasta', 'Cerai Mati', '2004-08-22', 'SUNANDAR', 'EUIS KOMARIAH', 'kis', 'tidak', false, true, false, '2024-02-18 08:00:00+00'),
+('cit-18', 'fam-08', '3216080404550001', 'M. TOHIR', 'Kepala Keluarga', 'L', 'Bekasi', '1955-04-04', 'O', 'Islam', 'SD / Sederajat', 'Pensiunan / Tidak Bekerja', 'Kawin', '1980-05-01', 'H. USMAN', 'HJ. SALAMAH', 'kis', 'daksa', false, true, true, '2024-02-20 16:30:00+00'),
+('cit-19', 'fam-09', '3216081505630001', 'H. BADRUDIN', 'Kepala Keluarga', 'L', 'Bekasi', '1963-05-15', 'B', 'Islam', 'SMA / Sederajat', 'Wiraswasta / Pedagang', 'Kawin', '1990-10-05', 'H. SYARIF', 'HJ. ZAINAB', 'mandiri', 'tidak', false, true, true, '2024-03-01 10:00:00+00'),
+('cit-20', 'fam-10', '3216081910810001', 'SUKIMAN', 'Kepala Keluarga', 'L', 'Kebumen', '1981-10-19', 'O', 'Islam', 'SMP / Sederajat', 'Buruh Tani', 'Kawin', '2006-12-09', 'PAIMIN', 'PONIRAH', 'kis', 'tidak', true, true, true, '2024-03-05 11:20:00+00')
 ON CONFLICT (nik) DO NOTHING;
 
 -- 10. SEED DATA NOTES

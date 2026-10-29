@@ -1,6 +1,12 @@
 import * as XLSX from 'xlsx';
 import { Family, Citizen, MaritalStatus, GenderType, PeneranganType, MckType, BansosType } from './types';
-import { getCitizenMaritalStatus, getFamilyHouseNumber } from './mockData';
+import {
+  getCitizenMaritalStatus,
+  getFamilyHouseNumber,
+  getCitizenBloodType,
+  getCitizenMarriageDate,
+  getCitizenParents,
+} from './mockData';
 
 export interface ExportRow {
   no_urut: number | string;
@@ -14,7 +20,11 @@ export interface ExportRow {
   jenis_kelamin: string;
   tempat_lahir: string;
   tanggal_lahir: string;
+  golongan_darah: string;
   status_perkawinan: string;
+  tanggal_perkawinan: string;
+  nama_ayah: string;
+  nama_ibu: string;
   agama: string;
   pendidikan_terakhir: string;
   pekerjaan: string;
@@ -63,6 +73,9 @@ export function prepareSpreadsheetRows(
     const f = familyMap.get(c.family_id);
     const houseNumber = getFamilyHouseNumber(f);
     const marital = getCitizenMaritalStatus(c);
+    const bloodType = getCitizenBloodType(c);
+    const marriageDate = getCitizenMarriageDate(c);
+    const parents = getCitizenParents(c);
 
     // Nomor Urut KK tracking
     const familyKey = c.family_id || (f?.no_kk ?? `unknown-${index}`);
@@ -93,7 +106,11 @@ export function prepareSpreadsheetRows(
       jenis_kelamin: gender,
       tempat_lahir: c.tempat_lahir,
       tanggal_lahir: c.tanggal_lahir,
+      golongan_darah: bloodType,
       status_perkawinan: marital,
+      tanggal_perkawinan: marriageDate,
+      nama_ayah: parents.ayah,
+      nama_ibu: parents.ibu,
       agama: c.agama || 'Islam',
       pendidikan_terakhir: c.pendidikan_terakhir,
       pekerjaan: c.pekerjaan,
@@ -124,7 +141,11 @@ export const SPREADSHEET_COLUMNS = [
   { key: 'jenis_kelamin', label: 'Jenis Kelamin' },
   { key: 'tempat_lahir', label: 'Tempat Lahir' },
   { key: 'tanggal_lahir', label: 'Tanggal Lahir' },
+  { key: 'golongan_darah', label: 'Golongan Darah' },
   { key: 'status_perkawinan', label: 'Status Perkawinan' },
+  { key: 'tanggal_perkawinan', label: 'Tanggal Perkawinan' },
+  { key: 'nama_ayah', label: 'Nama Ayah' },
+  { key: 'nama_ibu', label: 'Nama Ibu' },
   { key: 'agama', label: 'Agama' },
   { key: 'pendidikan_terakhir', label: 'Pendidikan Terakhir' },
   { key: 'pekerjaan', label: 'Pekerjaan' },
@@ -286,8 +307,17 @@ export async function parseSpreadsheetFile(file: File): Promise<Record<string, s
         mappedKey = 'jenis_kelamin';
         const gVal = String(raw[origKey] || '').toLowerCase();
         normalized['jenis_kelamin'] = gVal.includes('p') || gVal.includes('perempuan') ? 'P' : 'L';
-      } else if (cleanKey.includes('perkawinan') || cleanKey.includes('nikah')) mappedKey = 'status_perkawinan';
-      else if (cleanKey.includes('rumah')) mappedKey = 'no_rumah';
+      } else if (cleanKey.includes('tanggal_perkawinan') || cleanKey.includes('tgl_perkawinan') || cleanKey.includes('tgl_kawin') || cleanKey.includes('tanggal_nikah')) {
+        mappedKey = 'tanggal_perkawinan';
+      } else if (cleanKey.includes('perkawinan') || cleanKey.includes('nikah')) {
+        mappedKey = 'status_perkawinan';
+      } else if (cleanKey.includes('golongan_darah') || cleanKey.includes('gol_darah')) {
+        mappedKey = 'golongan_darah';
+      } else if (cleanKey.includes('ayah') || cleanKey.includes('bapak')) {
+        mappedKey = 'nama_ayah';
+      } else if (cleanKey.includes('ibu')) {
+        mappedKey = 'nama_ibu';
+      } else if (cleanKey.includes('rumah')) mappedKey = 'no_rumah';
       else if (cleanKey.includes('alamat')) mappedKey = 'alamat';
 
       normalized[mappedKey] = String(raw[origKey] || '').trim();
@@ -332,7 +362,11 @@ export function generateSampleTemplateWorkbook(): void {
       jenis_kelamin: 'Laki-laki',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '1978-05-12',
+      golongan_darah: 'O',
       status_perkawinan: 'Kawin',
+      tanggal_perkawinan: '1999-06-15',
+      nama_ayah: 'H. ABDUL KARIM',
+      nama_ibu: 'HJ. MAEMUNAH',
       agama: 'Islam',
       pendidikan_terakhir: 'SMA / Sederajat',
       pekerjaan: 'Buruh Harian Lepas',
@@ -358,7 +392,11 @@ export function generateSampleTemplateWorkbook(): void {
       jenis_kelamin: 'Perempuan',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '1982-08-15',
+      golongan_darah: 'A',
       status_perkawinan: 'Kawin',
+      tanggal_perkawinan: '1999-06-15',
+      nama_ayah: 'SANUSI',
+      nama_ibu: 'ROKAYA',
       agama: 'Islam',
       pendidikan_terakhir: 'SMP / Sederajat',
       pekerjaan: 'Mengurus Rumah Tangga',
@@ -384,7 +422,11 @@ export function generateSampleTemplateWorkbook(): void {
       jenis_kelamin: 'Laki-laki',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '2005-02-14',
+      golongan_darah: 'O',
       status_perkawinan: 'Belum Kawin',
+      tanggal_perkawinan: '-',
+      nama_ayah: 'SAMSUDIN',
+      nama_ibu: 'SITI AMINAH',
       agama: 'Islam',
       pendidikan_terakhir: 'SMA / Sederajat',
       pekerjaan: 'Pelajar / Mahasiswa',
@@ -410,7 +452,11 @@ export function generateSampleTemplateWorkbook(): void {
       jenis_kelamin: 'Laki-laki',
       tempat_lahir: 'Karawang',
       tanggal_lahir: '1975-07-24',
+      golongan_darah: 'B',
       status_perkawinan: 'Kawin',
+      tanggal_perkawinan: '2001-09-10',
+      nama_ayah: 'SUHANDI',
+      nama_ibu: 'MARYAM',
       agama: 'Islam',
       pendidikan_terakhir: 'SMK / Sederajat',
       pekerjaan: 'Karyawan Swasta',
@@ -443,7 +489,11 @@ export function generateSampleTemplate(): string {
       jenis_kelamin: 'Laki-laki',
       tempat_lahir: 'Bekasi',
       tanggal_lahir: '1978-05-12',
+      golongan_darah: 'O',
       status_perkawinan: 'Kawin',
+      tanggal_perkawinan: '1999-06-15',
+      nama_ayah: 'H. ABDUL KARIM',
+      nama_ibu: 'HJ. MAEMUNAH',
       agama: 'Islam',
       pendidikan_terakhir: 'SMA / Sederajat',
       pekerjaan: 'Buruh Harian Lepas',

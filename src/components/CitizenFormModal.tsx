@@ -3,7 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/lib/context';
 import { Citizen, Family, GenderType, BpjsType, MaritalStatus } from '@/lib/types';
-import { getCitizenMaritalStatus } from '@/lib/mockData';
+import {
+  getCitizenMaritalStatus,
+  getCitizenBloodType,
+  getCitizenMarriageDate,
+  getCitizenParents,
+} from '@/lib/mockData';
 import { UserPlus, Edit3, X, AlertCircle, Save } from 'lucide-react';
 
 interface CitizenFormModalProps {
@@ -29,6 +34,10 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
   const [gender, setGender] = useState<GenderType>('L');
   const [tempatLahir, setTempatLahir] = useState('Bekasi');
   const [tanggalLahir, setTanggalLahir] = useState('2000-01-01');
+  const [golonganDarah, setGolonganDarah] = useState('O');
+  const [tanggalPerkawinan, setTanggalPerkawinan] = useState('');
+  const [namaAyah, setNamaAyah] = useState('');
+  const [namaIbu, setNamaIbu] = useState('');
   const [agama, setAgama] = useState('Islam');
   const [pendidikan, setPendidikan] = useState('SMA / Sederajat');
   const [pekerjaan, setPekerjaan] = useState('Karyawan Swasta');
@@ -45,14 +54,21 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
     if (isOpen) {
       setError(null);
       if (editCitizen) {
+        const marital = getCitizenMaritalStatus(editCitizen);
+        const mDate = getCitizenMarriageDate(editCitizen);
+        const parents = getCitizenParents(editCitizen);
         setFamilyId(editCitizen.family_id);
         setNik(editCitizen.nik);
         setNamaLengkap(editCitizen.nama_lengkap);
         setHubungan(editCitizen.hubungan_keluarga || 'Anggota Keluarga');
-        setStatusPerkawinan(getCitizenMaritalStatus(editCitizen));
+        setStatusPerkawinan(marital);
         setGender(editCitizen.jenis_kelamin || 'L');
         setTempatLahir(editCitizen.tempat_lahir || 'Bekasi');
         setTanggalLahir(editCitizen.tanggal_lahir || '2000-01-01');
+        setGolonganDarah(getCitizenBloodType(editCitizen));
+        setTanggalPerkawinan(mDate !== '-' ? mDate : '');
+        setNamaAyah(parents.ayah !== '-' ? parents.ayah : '');
+        setNamaIbu(parents.ibu !== '-' ? parents.ibu : '');
         setAgama(editCitizen.agama || 'Islam');
         setPendidikan(editCitizen.pendidikan_terakhir || 'SMA / Sederajat');
         setPekerjaan(editCitizen.pekerjaan || 'Belum / Tidak Bekerja');
@@ -70,6 +86,10 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
         setGender('L');
         setTempatLahir('Bekasi');
         setTanggalLahir('2000-01-01');
+        setGolonganDarah('O');
+        setTanggalPerkawinan('');
+        setNamaAyah('');
+        setNamaIbu('');
         setAgama('Islam');
         setPendidikan('SMA / Sederajat');
         setPekerjaan('Belum / Tidak Bekerja');
@@ -108,9 +128,16 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
       nama_lengkap: namaLengkap.trim().toUpperCase(),
       hubungan_keluarga: hubungan,
       status_perkawinan: statusPerkawinan,
+      tanggal_perkawinan:
+        statusPerkawinan === 'Belum Kawin'
+          ? '-'
+          : tanggalPerkawinan.trim() || '-',
       jenis_kelamin: gender,
       tempat_lahir: tempatLahir.trim() || 'Bekasi',
       tanggal_lahir: tanggalLahir,
+      golongan_darah: golonganDarah || 'O',
+      nama_ayah: namaAyah.trim().toUpperCase() || '-',
+      nama_ibu: namaIbu.trim().toUpperCase() || '-',
       agama,
       pendidikan_terakhir: pendidikan,
       pekerjaan: pekerjaan.trim() || 'Belum / Tidak Bekerja',
@@ -281,6 +308,78 @@ export const CitizenFormModal: React.FC<CitizenFormModalProps> = ({
                 className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none"
                 required
               />
+            </div>
+          </div>
+
+          {/* Golongan Darah & Tanggal Perkawinan */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Golongan Darah</label>
+              <select
+                value={golonganDarah}
+                onChange={(e) => setGolonganDarah(e.target.value)}
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none font-semibold"
+              >
+                <option value="O">O</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="AB">AB</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="Tidak Tahu">Tidak Tahu</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Tanggal Perkawinan
+              </label>
+              <input
+                type="date"
+                value={statusPerkawinan === 'Belum Kawin' ? '' : tanggalPerkawinan}
+                onChange={(e) => setTanggalPerkawinan(e.target.value)}
+                disabled={statusPerkawinan === 'Belum Kawin'}
+                placeholder="-"
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          {/* Nama Orang Tua (Nama Ayah & Nama Ibu) */}
+          <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-200/80 space-y-2">
+            <span className="block text-[11px] font-extrabold text-sky-900 uppercase tracking-wider">
+              Nama Orang Tua Kandung
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Nama Ayah
+                </label>
+                <input
+                  type="text"
+                  value={namaAyah}
+                  onChange={(e) => setNamaAyah(e.target.value)}
+                  placeholder="NAMA LENGKAP AYAH"
+                  className="w-full p-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 outline-none uppercase focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Nama Ibu
+                </label>
+                <input
+                  type="text"
+                  value={namaIbu}
+                  onChange={(e) => setNamaIbu(e.target.value)}
+                  placeholder="NAMA LENGKAP IBU"
+                  className="w-full p-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 outline-none uppercase focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
             </div>
           </div>
 
